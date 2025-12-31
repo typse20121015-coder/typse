@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>雲端文檔簽核系統</title>
-    <!-- 引入 Tailwind CSS -->
+    <title>雲端文檔簽核系統 (修正版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入 Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Noto Sans TC', sans-serif; }
@@ -19,24 +17,20 @@
 <body class="bg-slate-50 text-slate-800">
     <div id="root"></div>
 
-    <!-- 引入 React 和 Babel -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- 主程式邏輯 -->
     <script type="text/babel" data-type="module">
-        // 導入 Firebase 模組 (使用 CDN)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, serverTimestamp, orderBy, initializeFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-        
-        // 導入 Lucide 圖標
+        // 改用 uploadBytesResumable 以監控進度
+        import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
         import { FileText, Upload, CheckCircle, Clock, User, LogOut, Plus, ChevronRight, X, Cloud, Loader2, RefreshCw, AlertCircle, Eye, Download, Settings } from "https://esm.sh/lucide-react@0.294.0";
 
         // =================================================================
-        // 【已修正】這裡填入您提供的真實 Firebase 設定
+        // 【重要】請在此處填入您的 Firebase 設定
         // =================================================================
         const firebaseConfig = {
             apiKey: "AIzaSyA5BLSDVUrLgpYdjC6G1PGW9uJ8n9zTAvs",
@@ -48,8 +42,9 @@
             measurementId: "G-YH28EB4REL"
         };
 
-        // --- 檢查設定是否已填寫的邏輯 ---
-        const isConfigured = firebaseConfig.apiKey !== "AIzaSy..." && firebaseConfig.projectId !== "your-project";
+
+        // 檢查是否已設定 Config
+        const isConfigured = firebaseConfig.apiKey !== "" && firebaseConfig.projectId !== "";
 
         let app, auth, db, storage;
         const COLLECTION_NAME = "company_documents";
@@ -58,9 +53,9 @@
             try {
                 app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
-                // 使用長輪詢以避免連線問題
                 db = initializeFirestore(app, { experimentalForceLongPolling: true });
                 storage = getStorage(app);
+                console.log("Firebase initialized successfully");
             } catch (e) {
                 console.error("Firebase Init Error:", e);
             }
@@ -73,39 +68,18 @@
                         <div className="p-3 bg-amber-100 rounded-full"><Settings size={32} /></div>
                         <h1 className="text-2xl font-bold text-slate-800">系統尚未設定完成</h1>
                     </div>
-                    
                     <div className="space-y-4 text-slate-600">
-                        <p className="font-bold">您好！看到這個畫面代表程式碼運作正常，但還缺最後一步：</p>
-                        <p>目前的程式碼使用的是「範本金鑰」，無法連線到您的資料庫。請依照以下步驟修改程式碼檔案 (index.html)：</p>
-                        
-                        <ol className="list-decimal pl-5 space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                            <li>用記事本或 VS Code 打開這個 <strong>index.html</strong> 檔案。</li>
-                            <li>搜尋 <strong>const firebaseConfig</strong> (大約在第 35 行)。</li>
-                            <li>將該區塊替換為您從 <a href="https://console.firebase.google.com/" target="_blank" className="text-blue-600 underline">Firebase 後台</a> 複製的設定碼。</li>
-                            <li>儲存檔案，然後重新整理這個網頁。</li>
-                        </ol>
-
-                        <div className="bg-slate-800 text-slate-300 p-4 rounded-lg font-mono text-sm overflow-x-auto">
-                            <p className="text-slate-500 mb-2">// 範例：您應該要貼上像這樣的內容</p>
-                            const firebaseConfig = &#123;<br/>
-                            &nbsp;&nbsp;apiKey: "AIzaSyD9_Hg...",<br/>
-                            &nbsp;&nbsp;authDomain: "company-app.firebaseapp.com",<br/>
-                            &nbsp;&nbsp;projectId: "company-app",<br/>
-                            &nbsp;&nbsp;...<br/>
-                            &#125;;
-                        </div>
+                        <p className="font-bold text-red-500">請注意：程式碼中尚未填入 Firebase Config。</p>
+                        <p>請打開 index.html 檔案，找到第 35 行左右的 firebaseConfig 區塊填入您的資訊。</p>
                     </div>
-                    
                     <button onClick={() => window.location.reload()} className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
-                        <RefreshCw size={20} />
-                        我已經修改好了，重新整理
+                        <RefreshCw size={20} /> 重整頁面
                     </button>
                 </div>
             </div>
         );
 
         const App = () => {
-            // 如果還沒設定，直接顯示教學頁面
             if (!isConfigured) return <ConfigGuide />;
 
             const [userRole, setUserRole] = React.useState(null); 
@@ -114,26 +88,22 @@
             const [loading, setLoading] = React.useState(true);
             const [showUploadModal, setShowUploadModal] = React.useState(false);
             const [selectedFile, setSelectedFile] = React.useState(null);
-            const [uploading, setUploading] = React.useState(false);
+            
+            // 上傳狀態管理
+            const [uploadStatus, setUploadStatus] = React.useState('idle'); // idle, uploading, success, error
+            const [progress, setProgress] = React.useState(0);
             const [errorMsg, setErrorMsg] = React.useState(null);
 
             // 1. 自動登入與監聽
             React.useEffect(() => {
                 signInAnonymously(auth).catch((error) => {
                     console.error("Login failed", error);
-                    let msg = "登入失敗，請檢查網路";
-                    if (error.code === 'auth/api-key-not-valid') {
-                        msg = "錯誤：API Key 無效。請檢查 index.html 中的 firebaseConfig 設定是否正確複製。";
-                    } else if (error.code === 'auth/operation-not-allowed') {
-                        msg = "錯誤：尚未啟用匿名登入。請到 Firebase 後台 -> Authentication 開啟匿名登入。";
-                    } else if (error.code === 'auth/configuration-not-found') {
-                        msg = "錯誤：尚未啟用 Authentication 功能。請到 Firebase 後台 -> Build -> Authentication -> 點擊「開始使用」，並啟用「匿名」登入。";
-                    }
-                    setErrorMsg(msg);
+                    setErrorMsg(`登入失敗: ${error.message} (請確認 Firebase Authentication 已啟用匿名登入)`);
                 });
 
                 const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
                     setUser(currentUser);
+                    if(currentUser) console.log("User logged in:", currentUser.uid);
                 });
                 return () => unsubscribeAuth();
             }, []);
@@ -142,22 +112,22 @@
             React.useEffect(() => {
                 if (!user) return;
                 
-                // 建立查詢 (按時間倒序)
                 const q = query(collection(db, COLLECTION_NAME), orderBy("createdAt", "desc"));
                 
                 const unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
                     const docs = snapshot.docs.map(doc => ({
                         id: doc.id,
                         ...doc.data(),
-                        // 將 Timestamp 轉為 Date 物件
                         createdAt: doc.data().createdAt?.toDate()
                     }));
                     setFiles(docs);
                     setLoading(false);
                 }, (err) => {
                     console.error("Firestore error", err);
-                    if (err.message.includes("index")) {
-                         setErrorMsg("系統正在建立索引中...請稍等幾分鐘後重試 (這是正常的首次設定過程)");
+                    if (err.message.includes("permission-denied")) {
+                         setErrorMsg("權限不足：請檢查 Firestore Database 的 Rules 是否設定為允許讀寫。");
+                    } else if (err.message.includes("index")) {
+                         setErrorMsg("系統正在建立索引中...請稍等幾分鐘。");
                     } else {
                          setErrorMsg(`讀取資料失敗: ${err.message}`);
                     }
@@ -167,41 +137,67 @@
                 return () => unsubscribeSnapshot();
             }, [user]);
 
-            // 上傳文件
-            const handleUpload = async (e) => {
+            // 上傳文件 (修正版：加入進度監控)
+            const handleUpload = (e) => {
                 e.preventDefault();
                 if (!selectedFile || !user) return;
                 
-                setUploading(true);
-                try {
-                    // 1. 上傳 Storage
-                    const uniqueName = `${Date.now()}_${selectedFile.name}`;
-                    const storageRef = ref(storage, `docs/${uniqueName}`);
-                    const snapshot = await uploadBytes(storageRef, selectedFile);
-                    const url = await getDownloadURL(snapshot.ref);
+                setUploadStatus('uploading');
+                setProgress(0);
 
-                    // 2. 寫入 Firestore
-                    await addDoc(collection(db, COLLECTION_NAME), {
-                        name: selectedFile.name,
-                        url: url,
-                        uploader: userRole === 'employee' ? '員工' : '老闆(測試)',
-                        status: 'pending',
-                        createdAt: serverTimestamp(),
-                        createdBy: user.uid,
-                        date: new Date().toISOString().split('T')[0]
-                    });
+                const uniqueName = `${Date.now()}_${selectedFile.name}`;
+                const storageRef = ref(storage, `docs/${uniqueName}`);
 
-                    setShowUploadModal(false);
-                    setSelectedFile(null);
-                } catch (err) {
-                    console.error(err);
-                    alert("上傳失敗：" + err.message);
-                } finally {
-                    setUploading(false);
-                }
+                // 使用 Resumable Upload
+                const uploadTask = uploadBytesResumable(storageRef, selectedFile);
+
+                uploadTask.on('state_changed', 
+                    (snapshot) => {
+                        const prog = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        setProgress(Math.round(prog));
+                        console.log('Upload is ' + prog + '% done');
+                    }, 
+                    (error) => {
+                        // Handle unsuccessful uploads
+                        console.error("Upload Error:", error);
+                        setUploadStatus('error');
+                        let msg = error.message;
+                        if (msg.includes("unauthorized") || msg.includes("403")) {
+                            msg = "權限錯誤 (403)：請至 Firebase Console -> Storage -> Rules 修改規則為 allow read, write: if true; (測試用)";
+                        }
+                        alert("上傳失敗：" + msg);
+                    }, 
+                    async () => {
+                        // Handle successful uploads on complete
+                        try {
+                            const url = await getDownloadURL(uploadTask.snapshot.ref);
+                            
+                            await addDoc(collection(db, COLLECTION_NAME), {
+                                name: selectedFile.name,
+                                url: url,
+                                uploader: userRole === 'employee' ? '員工' : '老闆(測試)',
+                                status: 'pending',
+                                createdAt: serverTimestamp(),
+                                createdBy: user.uid,
+                                date: new Date().toISOString().split('T')[0]
+                            });
+                            
+                            setUploadStatus('success');
+                            setTimeout(() => {
+                                setShowUploadModal(false);
+                                setSelectedFile(null);
+                                setUploadStatus('idle');
+                                setProgress(0);
+                            }, 1000);
+                        } catch (dbError) {
+                            console.error("Firestore Save Error:", dbError);
+                            setUploadStatus('error');
+                            alert("檔案上傳成功但寫入資料庫失敗：" + dbError.message);
+                        }
+                    }
+                );
             };
 
-            // 簽核
             const handleSign = async (docId) => {
                 try {
                     const docRef = doc(db, COLLECTION_NAME, docId);
@@ -211,20 +207,13 @@
                         signedBy: 'Boss'
                     });
                 } catch (err) {
-                    alert("簽核失敗");
+                    alert("簽核失敗: " + err.message);
                 }
             };
 
-            // 開啟檔案
-            const openFile = (url) => {
-                window.open(url, '_blank');
-            };
-
-            // 選擇檔案
+            const openFile = (url) => window.open(url, '_blank');
             const onFileChange = (e) => {
-                if(e.target.files && e.target.files[0]) {
-                    setSelectedFile(e.target.files[0]);
-                }
+                if(e.target.files && e.target.files[0]) setSelectedFile(e.target.files[0]);
             }
 
             // --- 介面渲染 ---
@@ -266,7 +255,6 @@
 
             return (
                 <div className="min-h-screen pb-20 relative bg-slate-50">
-                    {/* Header */}
                     <div className="bg-white px-6 py-4 shadow-sm sticky top-0 z-10 flex justify-between items-center">
                         <div>
                             <h2 className="text-lg font-bold flex items-center gap-2 text-slate-800">
@@ -278,7 +266,6 @@
                         <button onClick={() => setUserRole(null)} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors"><LogOut size={20}/></button>
                     </div>
 
-                    {/* Stats */}
                     <div className="p-6">
                         <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex text-center">
                             <div className="flex-1 border-r border-slate-100">
@@ -292,7 +279,6 @@
                         </div>
                     </div>
 
-                    {/* List */}
                     <div className="px-6 space-y-4">
                         {loading ? <div className="text-center py-10 text-slate-400"><Loader2 className="animate-spin mx-auto mb-2"/>讀取中...</div> : 
                          files.length === 0 ? <div className="text-center py-10 text-slate-400"><Cloud size={48} className="mx-auto mb-4 opacity-20"/>尚無文件</div> :
@@ -329,32 +315,45 @@
                         ))}
                     </div>
 
-                    {/* Upload Button */}
                     {userRole === 'employee' && (
                         <button onClick={() => setShowUploadModal(true)} className="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-xl shadow-indigo-300 flex items-center justify-center hover:scale-105 transition-all z-20 hover:bg-indigo-700">
                             <Plus size={28} />
                         </button>
                     )}
 
-                    {/* Modal */}
                     {showUploadModal && (
                         <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4 backdrop-blur-sm">
                             <div className="bg-white w-full max-w-sm rounded-2xl p-6 animate-slide-up sm:animate-fade-in">
                                 <div className="flex justify-between items-center mb-6">
                                     <h3 className="text-lg font-bold text-slate-800">上傳文件</h3>
-                                    <button onClick={() => setShowUploadModal(false)}><X size={24} className="text-slate-400 hover:text-slate-600"/></button>
+                                    <button onClick={() => { if(uploadStatus!=='uploading') setShowUploadModal(false); }}><X size={24} className="text-slate-400 hover:text-slate-600"/></button>
                                 </div>
                                 <form onSubmit={handleUpload} className="space-y-4">
                                     <label className={`block border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${selectedFile ? 'border-indigo-300 bg-indigo-50' : 'border-slate-200 hover:border-indigo-300 hover:bg-slate-50'}`}>
-                                        <input type="file" className="hidden" accept=".pdf" onChange={onFileChange} />
+                                        <input type="file" className="hidden" accept=".pdf" onChange={onFileChange} disabled={uploadStatus === 'uploading'} />
                                         {selectedFile ? (
                                             <div><FileText className="mx-auto text-indigo-500 mb-2" size={32}/><div className="text-indigo-700 font-bold break-all line-clamp-2">{selectedFile.name}</div></div>
                                         ) : (
                                             <div><Upload className="mx-auto text-slate-300 mb-2" size={32}/><div className="text-slate-500 font-medium">點擊選擇 PDF</div></div>
                                         )}
                                     </label>
-                                    <button type="submit" disabled={!selectedFile || uploading} className="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl disabled:opacity-50 flex justify-center items-center gap-2 hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200">
-                                        {uploading ? <><Loader2 className="animate-spin" size={20}/> 上傳中...</> : "確認上傳"}
+
+                                    {/* 進度條 */}
+                                    {uploadStatus === 'uploading' && (
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between text-xs text-slate-500">
+                                                <span>上傳中...</span>
+                                                <span>{progress}%</span>
+                                            </div>
+                                            <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                                                <div className="bg-indigo-600 h-full transition-all duration-300" style={{width: `${progress}%`}}></div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <button type="submit" disabled={!selectedFile || uploadStatus === 'uploading'} className="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl disabled:opacity-50 flex justify-center items-center gap-2 hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200">
+                                        {uploadStatus === 'uploading' ? <><Loader2 className="animate-spin" size={20}/> 處理中...</> : 
+                                         uploadStatus === 'success' ? <><CheckCircle size={20}/> 上傳成功</> : "確認上傳"}
                                     </button>
                                 </form>
                             </div>
