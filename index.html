@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>雲端文檔簽核系統</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+        .animate-slide-up { animation: slideUp 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+    <div id="root"></div>
+
+    <!-- 引入 React 和 Babel -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- 主程式邏輯 -->
+    <script type="text/babel" data-type="module">
+        // 導入 Firebase 模組 (使用 CDN)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, serverTimestamp, orderBy, initializeFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+        
+        // 導入 Lucide 圖標
+        import { FileText, Upload, CheckCircle, Clock, User, LogOut, Plus, ChevronRight, X, Cloud, Loader2, RefreshCw, AlertCircle, Eye, Download, Settings } from "https://esm.sh/lucide-react@0.294.0";
+
+        // =================================================================
+        // 【已修正】這裡填入您提供的真實 Firebase 設定
+        // =================================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyA5BLSDVUrLgpYdjC6G1PGW9uJ8n9zTAvs",
+            authDomain: "company-signing-app.firebaseapp.com",
+            projectId: "company-signing-app",
+            storageBucket: "company-signing-app.firebasestorage.app",
+            messagingSenderId: "616682952322",
+            appId: "1:616682952322:web:c601e18e51f125a795869b",
+            measurementId: "G-YH28EB4REL"
+        };
+
+        // --- 檢查設定是否已填寫的邏輯 ---
+        const isConfigured = firebaseConfig.apiKey !== "AIzaSy..." && firebaseConfig.projectId !== "your-project";
+
+        let app, auth, db, storage;
+        const COLLECTION_NAME = "company_documents";
+
+        if (isConfigured) {
+            try {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                // 使用長輪詢以避免連線問題
+                db = initializeFirestore(app, { experimentalForceLongPolling: true });
+                storage = getStorage(app);
+            } catch (e) {
+                console.error("Firebase Init Error:", e);
+            }
+        }
+
+        const ConfigGuide = () => (
+            <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
+                <div className="bg-white max-w-2xl w-full p-8 rounded-2xl shadow-xl space-y-6">
+                    <div className="flex items-center gap-4 text-amber-500 mb-2">
+                        <div className="p-3 bg-amber-100 rounded-full"><Settings size={32} /></div>
+                        <h1 className="text-2xl font-bold text-slate-800">系統尚未設定完成</h1>
+                    </div>
+                    
+                    <div className="space-y-4 text-slate-600">
+                        <p className="font-bold">您好！看到這個畫面代表程式碼運作正常，但還缺最後一步：</p>
+                        <p>目前的程式碼使用的是「範本金鑰」，無法連線到您的資料庫。請依照以下步驟修改程式碼檔案 (index.html)：</p>
+                        
+                        <ol className="list-decimal pl-5 space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <li>用記事本或 VS Code 打開這個 <strong>index.html</strong> 檔案。</li>
+                            <li>搜尋 <strong>const firebaseConfig</strong> (大約在第 35 行)。</li>
+                            <li>將該區塊替換為您從 <a href="https://console.firebase.google.com/" target="_blank" className="text-blue-600 underline">Firebase 後台</a> 複製的設定碼。</li>
+                            <li>儲存檔案，然後重新整理這個網頁。</li>
+                        </ol>
+
+                        <div className="bg-slate-800 text-slate-300 p-4 rounded-lg font-mono text-sm overflow-x-auto">
+                            <p className="text-slate-500 mb-2">// 範例：您應該要貼上像這樣的內容</p>
+                            const firebaseConfig = &#123;<br/>
+                            &nbsp;&nbsp;apiKey: "AIzaSyD9_Hg...",<br/>
+                            &nbsp;&nbsp;authDomain: "company-app.firebaseapp.com",<br/>
+                            &nbsp;&nbsp;projectId: "company-app",<br/>
+                            &nbsp;&nbsp;...<br/>
+                            &#125;;
+                        </div>
+                    </div>
+                    
+                    <button onClick={() => window.location.reload()} className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                        <RefreshCw size={20} />
+                        我已經修改好了，重新整理
+                    </button>
+                </div>
+            </div>
+        );
+
+        const App = () => {
+            // 如果還沒設定，直接顯示教學頁面
+            if (!isConfigured) return <ConfigGuide />;
+
+            const [userRole, setUserRole] = React.useState(null); 
+            const [user, setUser] = React.useState(null);
+            const [files, setFiles] = React.useState([]);
+            const [loading, setLoading] = React.useState(true);
+            const [showUploadModal, setShowUploadModal] = React.useState(false);
+            const [selectedFile, setSelectedFile] = React.useState(null);
+            const [uploading, setUploading] = React.useState(false);
+            const [errorMsg, setErrorMsg] = React.useState(null);
+
+            // 1. 自動登入與監聽
+            React.useEffect(() => {
+                signInAnonymously(auth).catch((error) => {
+                    console.error("Login failed", error);
+                    let msg = "登入失敗，請檢查網路";
+                    if (error.code === 'auth/api-key-not-valid') {
+                        msg = "錯誤：API Key 無效。請檢查 index.html 中的 firebaseConfig 設定是否正確複製。";
+                    } else if (error.code === 'auth/operation-not-allowed') {
+                        msg = "錯誤：尚未啟用匿名登入。請到 Firebase Authentication 開啟匿名登入。";
+                    }
+                    setErrorMsg(msg);
+                });
+
+                const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+                    setUser(currentUser);
+                });
+                return () => unsubscribeAuth();
+            }, []);
+
+            // 2. 監聽文件數據
+            React.useEffect(() => {
+                if (!user) return;
+                
+                // 建立查詢 (按時間倒序)
+                const q = query(collection(db, COLLECTION_NAME), orderBy("createdAt", "desc"));
+                
+                const unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
+                    const docs = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data(),
+                        // 將 Timestamp 轉為 Date 物件
+                        createdAt: doc.data().createdAt?.toDate()
+                    }));
+                    setFiles(docs);
+                    setLoading(false);
+                }, (err) => {
+                    console.error("Firestore error", err);
+                    if (err.message.includes("index")) {
+                         setErrorMsg("系統正在建立索引中...請稍等幾分鐘後重試 (這是正常的首次設定過程)");
+                    } else {
+                         setErrorMsg(`讀取資料失敗: ${err.message}`);
+                    }
+                    setLoading(false);
+                });
+
+                return () => unsubscribeSnapshot();
+            }, [user]);
+
+            // 上傳文件
+            const handleUpload = async (e) => {
+                e.preventDefault();
+                if (!selectedFile || !user) return;
+                
+                setUploading(true);
+                try {
+                    // 1. 上傳 Storage
+                    const uniqueName = `${Date.now()}_${selectedFile.name}`;
+                    const storageRef = ref(storage, `docs/${uniqueName}`);
+                    const snapshot = await uploadBytes(storageRef, selectedFile);
+                    const url = await getDownloadURL(snapshot.ref);
+
+                    // 2. 寫入 Firestore
+                    await addDoc(collection(db, COLLECTION_NAME), {
+                        name: selectedFile.name,
+                        url: url,
+                        uploader: userRole === 'employee' ? '員工' : '老闆(測試)',
+                        status: 'pending',
+                        createdAt: serverTimestamp(),
+                        createdBy: user.uid,
+                        date: new Date().toISOString().split('T')[0]
+                    });
+
+                    setShowUploadModal(false);
+                    setSelectedFile(null);
+                } catch (err) {
+                    console.error(err);
+                    alert("上傳失敗：" + err.message);
+                } finally {
+                    setUploading(false);
+                }
+            };
+
+            // 簽核
+            const handleSign = async (docId) => {
+                try {
+                    const docRef = doc(db, COLLECTION_NAME, docId);
+                    await updateDoc(docRef, {
+                        status: 'signed',
+                        signedAt: serverTimestamp(),
+                        signedBy: 'Boss'
+                    });
+                } catch (err) {
+                    alert("簽核失敗");
+                }
+            };
+
+            // 開啟檔案
+            const openFile = (url) => {
+                window.open(url, '_blank');
+            };
+
+            // 選擇檔案
+            const onFileChange = (e) => {
+                if(e.target.files && e.target.files[0]) {
+                    setSelectedFile(e.target.files[0]);
+                }
+            }
+
+            // --- 介面渲染 ---
+
+            if (errorMsg) {
+                return (
+                    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-slate-50">
+                        <div className="text-red-500 mb-4 bg-red-100 p-4 rounded-full"><AlertCircle size={48} /></div>
+                        <h3 className="text-xl font-bold mb-2 text-slate-800">發生錯誤</h3>
+                        <p className="text-slate-600 mb-6 max-w-md mx-auto">{errorMsg}</p>
+                        <button onClick={() => window.location.reload()} className="bg-slate-800 text-white px-6 py-2 rounded-lg hover:bg-slate-700 transition-colors">重新整理</button>
+                    </div>
+                );
+            }
+
+            if (!userRole) {
+                return (
+                    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white animate-fade-in">
+                        <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-blue-200">
+                            <Cloud className="text-white" size={32} />
+                        </div>
+                        <h1 className="text-2xl font-bold mb-8 text-slate-800">文檔簽核系統</h1>
+                        <div className="w-full max-w-sm space-y-4">
+                            <button onClick={() => setUserRole('boss')} className="w-full flex items-center p-4 border-2 border-slate-100 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all group">
+                                <div className="bg-blue-100 p-2 rounded-full mr-4 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors"><User size={20}/></div>
+                                <div className="flex-1 text-left font-bold text-slate-700">我是老闆</div>
+                                <ChevronRight className="text-slate-300 group-hover:text-blue-500" />
+                            </button>
+                            <button onClick={() => setUserRole('employee')} className="w-full flex items-center p-4 border-2 border-slate-100 rounded-xl hover:border-indigo-500 hover:bg-indigo-50 transition-all group">
+                                <div className="bg-indigo-100 p-2 rounded-full mr-4 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors"><Upload size={20}/></div>
+                                <div className="flex-1 text-left font-bold text-slate-700">我是員工</div>
+                                <ChevronRight className="text-slate-300 group-hover:text-indigo-500" />
+                            </button>
+                        </div>
+                        <p className="mt-8 text-xs text-slate-400">連線狀態: {user ? "已連線" : "連線中..."}</p>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen pb-20 relative bg-slate-50">
+                    {/* Header */}
+                    <div className="bg-white px-6 py-4 shadow-sm sticky top-0 z-10 flex justify-between items-center">
+                        <div>
+                            <h2 className="text-lg font-bold flex items-center gap-2 text-slate-800">
+                                {userRole === 'boss' ? '待辦簽核' : '我的文件'}
+                                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                            </h2>
+                            <p className="text-xs text-slate-500">{userRole === 'boss' ? '老闆視角' : '員工視角'}</p>
+                        </div>
+                        <button onClick={() => setUserRole(null)} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors"><LogOut size={20}/></button>
+                    </div>
+
+                    {/* Stats */}
+                    <div className="p-6">
+                        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex text-center">
+                            <div className="flex-1 border-r border-slate-100">
+                                <div className="text-2xl font-bold text-amber-500">{files.filter(f=>f.status==='pending').length}</div>
+                                <div className="text-xs text-slate-500">待簽核</div>
+                            </div>
+                            <div className="flex-1">
+                                <div className="text-2xl font-bold text-emerald-500">{files.filter(f=>f.status==='signed').length}</div>
+                                <div className="text-xs text-slate-500">已完成</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* List */}
+                    <div className="px-6 space-y-4">
+                        {
