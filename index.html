@@ -24,24 +24,26 @@
     <script type="text/babel" data-type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, serverTimestamp, orderBy, initializeFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        // 改用 uploadBytesResumable 以監控進度
-        import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-        import { FileText, Upload, CheckCircle, Clock, User, LogOut, Plus, ChevronRight, X, Cloud, Loader2, RefreshCw, AlertCircle, Eye, Download, Settings } from "https://esm.sh/lucide-react@0.294.0";
+        // 新增 deleteDoc
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, serverTimestamp, orderBy, initializeFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        // 新增 deleteObject
+        import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+        // 新增 Trash2
+        import { FileText, Upload, CheckCircle, Clock, User, LogOut, Plus, ChevronRight, X, Cloud, Loader2, RefreshCw, AlertCircle, Eye, Download, Settings, Trash2 } from "https://esm.sh/lucide-react@0.294.0";
 
         // =================================================================
-        // 【重要】請在此處填入您的 Firebase 設定
+        // 【重要】請在此處填入您「新專案」的 Firebase 設定
         // =================================================================
+        // 請到 Firebase Console -> 專案設定 (Project Settings) -> 下方 Your apps 複製
         const firebaseConfig = {
-            apiKey: "AIzaSyA5BLSDVUrLgpYdjC6G1PGW9uJ8n9zTAvs",
-            authDomain: "company-signing-app.firebaseapp.com",
-            projectId: "company-signing-app",
-            storageBucket: "company-signing-app.firebasestorage.app",
-            messagingSenderId: "616682952322",
-            appId: "1:616682952322:web:c601e18e51f125a795869b",
-            measurementId: "G-YH28EB4REL"
+            apiKey: "AIzaSyAGVsfEVwoPvE1iL-7WE9nVoAmyL7X6X_M",
+            authDomain: "typse-20121015.firebaseapp.com",
+            projectId: "typse-20121015",
+            storageBucket: "typse-20121015.firebasestorage.app",
+            messagingSenderId: "1042108083024",
+            appId: "1:1042108083024:web:454df702bac2797a68da55",
+            measurementId: "G-57CC8QJRYH"
         };
-
 
         // 檢查是否已設定 Config
         const isConfigured = firebaseConfig.apiKey !== "" && firebaseConfig.projectId !== "";
@@ -53,7 +55,7 @@
             try {
                 app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
-                db = initializeFirestore(app, { experimentalForceLongPolling: true });
+                db = getFirestore(app);
                 storage = getStorage(app);
                 console.log("Firebase initialized successfully");
             } catch (e) {
@@ -69,11 +71,12 @@
                         <h1 className="text-2xl font-bold text-slate-800">系統尚未設定完成</h1>
                     </div>
                     <div className="space-y-4 text-slate-600">
-                        <p className="font-bold text-red-500">請注意：程式碼中尚未填入 Firebase Config。</p>
-                        <p>請打開 index.html 檔案，找到第 35 行左右的 firebaseConfig 區塊填入您的資訊。</p>
+                        <p className="font-bold text-red-500">檢測到您更換了專案，但尚未填入新的設定碼。</p>
+                        <p>請打開 <strong>index.html</strong> 檔案，找到第 35 行左右的 <strong>firebaseConfig</strong> 區塊。</p>
+                        <p>將內容替換為您從 Firebase 後台複製的「新專案」設定碼。</p>
                     </div>
                     <button onClick={() => window.location.reload()} className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
-                        <RefreshCw size={20} /> 重整頁面
+                        <RefreshCw size={20} /> 我已更新設定，重整頁面
                     </button>
                 </div>
             </div>
@@ -90,9 +93,13 @@
             const [selectedFile, setSelectedFile] = React.useState(null);
             
             // 上傳狀態管理
-            const [uploadStatus, setUploadStatus] = React.useState('idle'); // idle, uploading, success, error
+            const [uploadStatus, setUploadStatus] = React.useState('idle');
             const [progress, setProgress] = React.useState(0);
             const [errorMsg, setErrorMsg] = React.useState(null);
+
+            // 刪除確認狀態
+            const [deleteTarget, setDeleteTarget] = React.useState(null); // { id: string, url: string, name: string }
+            const [isDeleting, setIsDeleting] = React.useState(false);
 
             // 1. 自動登入與監聽
             React.useEffect(() => {
@@ -103,7 +110,6 @@
 
                 const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
                     setUser(currentUser);
-                    if(currentUser) console.log("User logged in:", currentUser.uid);
                 });
                 return () => unsubscribeAuth();
             }, []);
@@ -125,7 +131,7 @@
                 }, (err) => {
                     console.error("Firestore error", err);
                     if (err.message.includes("permission-denied")) {
-                         setErrorMsg("權限不足：請檢查 Firestore Database 的 Rules 是否設定為允許讀寫。");
+                         setErrorMsg("權限不足：請檢查新專案的 Firestore Database Rules 是否已設為 allow read, write: if true;");
                     } else if (err.message.includes("index")) {
                          setErrorMsg("系統正在建立索引中...請稍等幾分鐘。");
                     } else {
@@ -137,7 +143,7 @@
                 return () => unsubscribeSnapshot();
             }, [user]);
 
-            // 上傳文件 (修正版：加入進度監控)
+            // 上傳文件
             const handleUpload = (e) => {
                 e.preventDefault();
                 if (!selectedFile || !user) return;
@@ -148,27 +154,23 @@
                 const uniqueName = `${Date.now()}_${selectedFile.name}`;
                 const storageRef = ref(storage, `docs/${uniqueName}`);
 
-                // 使用 Resumable Upload
                 const uploadTask = uploadBytesResumable(storageRef, selectedFile);
 
                 uploadTask.on('state_changed', 
                     (snapshot) => {
                         const prog = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
                         setProgress(Math.round(prog));
-                        console.log('Upload is ' + prog + '% done');
                     }, 
                     (error) => {
-                        // Handle unsuccessful uploads
                         console.error("Upload Error:", error);
                         setUploadStatus('error');
                         let msg = error.message;
                         if (msg.includes("unauthorized") || msg.includes("403")) {
-                            msg = "權限錯誤 (403)：請至 Firebase Console -> Storage -> Rules 修改規則為 allow read, write: if true; (測試用)";
+                            msg = "權限錯誤 (403)：請檢查新專案的 Storage Rules 是否已設為 allow read, write: if true;";
                         }
-                        alert("上傳失敗：" + msg);
+                        setErrorMsg("上傳失敗：" + msg);
                     }, 
                     async () => {
-                        // Handle successful uploads on complete
                         try {
                             const url = await getDownloadURL(uploadTask.snapshot.ref);
                             
@@ -192,7 +194,7 @@
                         } catch (dbError) {
                             console.error("Firestore Save Error:", dbError);
                             setUploadStatus('error');
-                            alert("檔案上傳成功但寫入資料庫失敗：" + dbError.message);
+                            setErrorMsg("檔案上傳成功但寫入資料庫失敗：" + dbError.message);
                         }
                     }
                 );
@@ -207,7 +209,37 @@
                         signedBy: 'Boss'
                     });
                 } catch (err) {
-                    alert("簽核失敗: " + err.message);
+                    setErrorMsg("簽核失敗: " + err.message);
+                }
+            };
+
+            // 執行刪除
+            const confirmDeleteFile = async () => {
+                if (!deleteTarget) return;
+                setIsDeleting(true);
+
+                try {
+                    // 1. 嘗試刪除 Storage 實體檔案
+                    if (deleteTarget.url) {
+                        try {
+                            const fileRef = ref(storage, deleteTarget.url);
+                            await deleteObject(fileRef);
+                        } catch (storageErr) {
+                            console.warn("Storage 檔案刪除失敗或檔案不存在 (可能已被刪除)", storageErr);
+                            // 即使 Storage 刪除失敗，我們還是要繼續刪除 Firestore 資料
+                        }
+                    }
+
+                    // 2. 刪除 Firestore 紀錄
+                    await deleteDoc(doc(db, COLLECTION_NAME, deleteTarget.id));
+                    
+                    // 關閉 Modal
+                    setDeleteTarget(null);
+                } catch (err) {
+                    console.error("Delete Error:", err);
+                    setErrorMsg("刪除失敗: " + err.message);
+                } finally {
+                    setIsDeleting(false);
                 }
             };
 
@@ -283,7 +315,7 @@
                         {loading ? <div className="text-center py-10 text-slate-400"><Loader2 className="animate-spin mx-auto mb-2"/>讀取中...</div> : 
                          files.length === 0 ? <div className="text-center py-10 text-slate-400"><Cloud size={48} className="mx-auto mb-4 opacity-20"/>尚無文件</div> :
                          files.map(file => (
-                            <div key={file.id} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 animate-fade-in hover:shadow-md transition-shadow">
+                            <div key={file.id} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 animate-fade-in hover:shadow-md transition-shadow relative">
                                 <div className="flex justify-between items-start mb-3">
                                     <div className="flex gap-3">
                                         <div className={`p-2 rounded-lg ${file.status === 'signed' ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'}`}>
@@ -294,23 +326,34 @@
                                             <div className="text-xs text-slate-500 mt-1">{file.uploader} • {file.date}</div>
                                         </div>
                                     </div>
+                                    {/* 右上角狀態 */}
                                     {file.status === 'signed' ? 
                                         <span className="flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-100"><CheckCircle size={12}/>已簽核</span> : 
                                         <span className="flex items-center gap-1 text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-full border border-amber-100"><Clock size={12}/>待簽核</span>
                                     }
                                 </div>
                                 
-                                {userRole === 'boss' && file.status === 'pending' && (
-                                    <div className="flex gap-2 mt-3 pt-3 border-t border-slate-50">
-                                        <button onClick={() => openFile(file.url)} className="flex-1 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium flex items-center justify-center gap-1 hover:bg-slate-200 transition-colors"><Eye size={16}/> 預覽</button>
-                                        <button onClick={() => handleSign(file.id)} className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">批准簽核</button>
+                                <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-50">
+                                    <div className="flex gap-2 w-full">
+                                    {userRole === 'boss' && file.status === 'pending' ? (
+                                        <>
+                                            <button onClick={() => openFile(file.url)} className="flex-1 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium flex items-center justify-center gap-1 hover:bg-slate-200 transition-colors"><Eye size={16}/> 預覽</button>
+                                            <button onClick={() => handleSign(file.id)} className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">批准簽核</button>
+                                        </>
+                                    ) : (
+                                        <button onClick={() => openFile(file.url)} className="text-sm text-blue-500 flex items-center gap-1 hover:text-blue-700 transition-colors"><Download size={14}/> 下載/查看</button>
+                                    )}
                                     </div>
-                                )}
-                                {(userRole === 'employee' || file.status === 'signed') && (
-                                     <div className="mt-3 pt-3 border-t border-slate-50 text-right">
-                                        <button onClick={() => openFile(file.url)} className="text-sm text-blue-500 flex items-center justify-end gap-1 ml-auto hover:text-blue-700 transition-colors"><Download size={14}/> 下載/查看</button>
-                                     </div>
-                                )}
+
+                                    {/* 刪除按鈕 (所有人都可見) */}
+                                    <button 
+                                        onClick={() => setDeleteTarget(file)} 
+                                        className="ml-2 p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                        title="刪除檔案"
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -321,6 +364,7 @@
                         </button>
                     )}
 
+                    {/* 上傳 Modal */}
                     {showUploadModal && (
                         <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4 backdrop-blur-sm">
                             <div className="bg-white w-full max-w-sm rounded-2xl p-6 animate-slide-up sm:animate-fade-in">
@@ -359,6 +403,41 @@
                             </div>
                         </div>
                     )}
+
+                    {/* 刪除確認 Modal */}
+                    {deleteTarget && (
+                        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                            <div className="bg-white w-full max-w-xs rounded-2xl p-6 animate-fade-in shadow-2xl">
+                                <div className="text-center">
+                                    <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4 text-red-500">
+                                        <Trash2 size={24} />
+                                    </div>
+                                    <h3 className="text-lg font-bold text-slate-800 mb-2">確認刪除？</h3>
+                                    <p className="text-sm text-slate-500 mb-6">
+                                        您即將刪除 <span className="font-bold text-slate-700">{deleteTarget.name}</span>。<br/>
+                                        此動作無法復原。
+                                    </p>
+                                    <div className="flex gap-3">
+                                        <button 
+                                            onClick={() => setDeleteTarget(null)}
+                                            disabled={isDeleting}
+                                            className="flex-1 py-2 bg-slate-100 text-slate-600 rounded-xl font-medium hover:bg-slate-200 transition-colors"
+                                        >
+                                            取消
+                                        </button>
+                                        <button 
+                                            onClick={confirmDeleteFile}
+                                            disabled={isDeleting}
+                                            className="flex-1 py-2 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            {isDeleting ? <Loader2 className="animate-spin" size={16}/> : "刪除"}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                 </div>
             );
         };
