@@ -422,7 +422,7 @@
                                             )}
                                         </div>
                                         
-                                        <div className="flex items-center gap-2 pl-2 border-l border-slate-100 ml-2">
+                                        <div className="flex items-center gap-3 pl-2 border-l border-slate-100 ml-2"> {/* Increased gap to gap-3 */}
                                             
                                             {/* 理事長：待辦事項的操作按鈕 */}
                                             {role === 'chairman' && doc.status === 'pending' && (
@@ -438,7 +438,7 @@
                                                     </a>
 
                                                     {/* 2. 簽核回傳 (上傳) - 修正 Hover 效果 */}
-                                                    <div className="relative p-2 text-green-600 bg-green-50 hover:bg-green-100 rounded-full transition-colors">
+                                                    <div className="relative p-2 text-green-600 bg-green-50 hover:bg-green-100 rounded-full transition-colors overflow-hidden">
                                                         <input type="file" accept=".pdf, .jpg, .jpeg, .png"
                                                             onChange={(e) => {
                                                                 if (e.target.files[0]) {
@@ -452,7 +452,7 @@
                                                     </div>
 
                                                     {/* 3. 退回公文 */}
-                                                    <button onClick={() => onReject(doc.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors" title="退回此公文">
+                                                    <button onClick={() => onReject(doc.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors relative z-10" title="退回此公文">
                                                         <Icons.RotateCcw className="w-5 h-5" />
                                                     </button>
                                                 </>
@@ -460,7 +460,7 @@
 
                                             {/* 會務人員：重新上傳 - 修正 Hover 效果 */}
                                             {role === 'staff' && doc.status === 'returned' && (
-                                                <div className="relative p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-full transition-colors">
+                                                <div className="relative p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-full transition-colors overflow-hidden">
                                                     <input type="file" accept=".pdf, .jpg, .jpeg, .png"
                                                         onChange={(e) => {
                                                             e.stopPropagation();
