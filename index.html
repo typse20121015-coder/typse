@@ -2,445 +2,625 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>雲端文檔簽核系統 (修正版)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>桃園市結構工程技師公會 - 數位公文系統</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+
     <style>
-        body { font-family: 'Noto Sans TC', sans-serif; }
-        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
-        .animate-slide-up { animation: slideUp 0.3s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        body {
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
     <div id="root"></div>
 
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
 
-    <script type="text/babel" data-type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        // 新增 deleteDoc
-        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, serverTimestamp, orderBy, initializeFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        // 新增 deleteObject
-        import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-        // 新增 Trash2
-        import { FileText, Upload, CheckCircle, Clock, User, LogOut, Plus, ChevronRight, X, Cloud, Loader2, RefreshCw, AlertCircle, Eye, Download, Settings, Trash2 } from "https://esm.sh/lucide-react@0.294.0";
+        // --- 設定區 ---
+        const API_URL = "https://script.google.com/macros/s/AKfycbwaczXwarU25kyQlJtd6EyZ2IJjB5hhrly0SyqMECtCxeght5HJtSfYhCTVbIYOWM3m/exec";
+        const STAFF_MEMBERS = ['張鈺琪', '謝蕙朱', '陳曉芬'];
 
-        // =================================================================
-        // 【重要】請在此處填入您「新專案」的 Firebase 設定
-        // =================================================================
-        // 請到 Firebase Console -> 專案設定 (Project Settings) -> 下方 Your apps 複製
-        const firebaseConfig = {
-            apiKey: "AIzaSyAGVsfEVwoPvE1iL-7WE9nVoAmyL7X6X_M",
-            authDomain: "typse-20121015.firebaseapp.com",
-            projectId: "typse-20121015",
-            storageBucket: "typse-20121015.firebasestorage.app",
-            messagingSenderId: "1042108083024",
-            appId: "1:1042108083024:web:454df702bac2797a68da55",
-            measurementId: "G-57CC8QJRYH"
-        };
-
-        // 檢查是否已設定 Config
-        const isConfigured = firebaseConfig.apiKey !== "" && firebaseConfig.projectId !== "";
-
-        let app, auth, db, storage;
-        const COLLECTION_NAME = "company_documents";
-
-        if (isConfigured) {
-            try {
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-                storage = getStorage(app);
-                console.log("Firebase initialized successfully");
-            } catch (e) {
-                console.error("Firebase Init Error:", e);
-            }
-        }
-
-        const ConfigGuide = () => (
-            <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
-                <div className="bg-white max-w-2xl w-full p-8 rounded-2xl shadow-xl space-y-6">
-                    <div className="flex items-center gap-4 text-amber-500 mb-2">
-                        <div className="p-3 bg-amber-100 rounded-full"><Settings size={32} /></div>
-                        <h1 className="text-2xl font-bold text-slate-800">系統尚未設定完成</h1>
-                    </div>
-                    <div className="space-y-4 text-slate-600">
-                        <p className="font-bold text-red-500">檢測到您更換了專案，但尚未填入新的設定碼。</p>
-                        <p>請打開 <strong>index.html</strong> 檔案，找到第 35 行左右的 <strong>firebaseConfig</strong> 區塊。</p>
-                        <p>將內容替換為您從 Firebase 後台複製的「新專案」設定碼。</p>
-                    </div>
-                    <button onClick={() => window.location.reload()} className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
-                        <RefreshCw size={20} /> 我已更新設定，重整頁面
-                    </button>
-                </div>
-            </div>
+        // --- 圖示元件 ---
+        const Icon = ({ path, className, ...props }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
+                {path}
+            </svg>
         );
 
-        const App = () => {
-            if (!isConfigured) return <ConfigGuide />;
+        const Icons = {
+            FileText: (props) => <Icon path={<><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></>} {...props} />,
+            Upload: (props) => <Icon path={<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></>} {...props} />,
+            User: (props) => <Icon path={<><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>} {...props} />,
+            Users: (props) => <Icon path={<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>} {...props} />,
+            LogOut: (props) => <Icon path={<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>} {...props} />,
+            X: (props) => <Icon path={<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>} {...props} />,
+            Clock: (props) => <Icon path={<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>} {...props} />,
+            Trash2: (props) => <Icon path={<><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></>} {...props} />,
+            ChevronRight: (props) => <Icon path={<polyline points="9 18 15 12 9 6"/>} {...props} />,
+            Download: (props) => <Icon path={<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>} {...props} />,
+            ArrowLeft: (props) => <Icon path={<><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></>} {...props} />,
+            RotateCcw: (props) => <Icon path={<><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></>} {...props} />,
+            AlertCircle: (props) => <Icon path={<><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>} {...props} />,
+            RefreshCw: (props) => <Icon path={<><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></>} {...props} />,
+            Loader2: (props) => <Icon path={<><path d="M21 12a9 9 0 1 1-6.219-8.56"/></>} {...props} />,
+            ExternalLink: (props) => <Icon path={<><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></>} {...props} />,
+            Image: (props) => <Icon path={<><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></>} {...props} />,
+            FileCheck: (props) => <Icon path={<><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/></>} {...props} />
+        };
 
-            const [userRole, setUserRole] = React.useState(null); 
-            const [user, setUser] = React.useState(null);
-            const [files, setFiles] = React.useState([]);
-            const [loading, setLoading] = React.useState(true);
-            const [showUploadModal, setShowUploadModal] = React.useState(false);
-            const [selectedFile, setSelectedFile] = React.useState(null);
+        function App() {
+            const [currentUser, setCurrentUser] = useState(null); 
+            const [documents, setDocuments] = useState([]);
+            const [currentView, setCurrentView] = useState('list');
+            const [selectedDoc, setSelectedDoc] = useState(null);
+            const [isLoading, setIsLoading] = useState(false);
             
-            // 上傳狀態管理
-            const [uploadStatus, setUploadStatus] = React.useState('idle');
-            const [progress, setProgress] = React.useState(0);
-            const [errorMsg, setErrorMsg] = React.useState(null);
+            // 退回視窗狀態
+            const [rejectModalOpen, setRejectModalOpen] = useState(false);
+            const [rejectDocId, setRejectDocId] = useState(null);
+            const [rejectReason, setRejectReason] = useState('');
 
-            // 刪除確認狀態
-            const [deleteTarget, setDeleteTarget] = React.useState(null); // { id: string, url: string, name: string }
-            const [isDeleting, setIsDeleting] = React.useState(false);
+            const userRole = currentUser?.role;
 
-            // 1. 自動登入與監聽
-            React.useEffect(() => {
-                signInAnonymously(auth).catch((error) => {
-                    console.error("Login failed", error);
-                    setErrorMsg(`登入失敗: ${error.message} (請確認 Firebase Authentication 已啟用匿名登入)`);
-                });
-
-                const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
-                    setUser(currentUser);
-                });
-                return () => unsubscribeAuth();
-            }, []);
-
-            // 2. 監聽文件數據
-            React.useEffect(() => {
-                if (!user) return;
-                
-                const q = query(collection(db, COLLECTION_NAME), orderBy("createdAt", "desc"));
-                
-                const unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
-                    const docs = snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data(),
-                        createdAt: doc.data().createdAt?.toDate()
-                    }));
-                    setFiles(docs);
-                    setLoading(false);
-                }, (err) => {
-                    console.error("Firestore error", err);
-                    if (err.message.includes("permission-denied")) {
-                         setErrorMsg("權限不足：請檢查新專案的 Firestore Database Rules 是否已設為 allow read, write: if true;");
-                    } else if (err.message.includes("index")) {
-                         setErrorMsg("系統正在建立索引中...請稍等幾分鐘。");
-                    } else {
-                         setErrorMsg(`讀取資料失敗: ${err.message}`);
-                    }
-                    setLoading(false);
-                });
-
-                return () => unsubscribeSnapshot();
-            }, [user]);
-
-            // 上傳文件
-            const handleUpload = (e) => {
-                e.preventDefault();
-                if (!selectedFile || !user) return;
-                
-                setUploadStatus('uploading');
-                setProgress(0);
-
-                const uniqueName = `${Date.now()}_${selectedFile.name}`;
-                const storageRef = ref(storage, `docs/${uniqueName}`);
-
-                const uploadTask = uploadBytesResumable(storageRef, selectedFile);
-
-                uploadTask.on('state_changed', 
-                    (snapshot) => {
-                        const prog = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                        setProgress(Math.round(prog));
-                    }, 
-                    (error) => {
-                        console.error("Upload Error:", error);
-                        setUploadStatus('error');
-                        let msg = error.message;
-                        if (msg.includes("unauthorized") || msg.includes("403")) {
-                            msg = "權限錯誤 (403)：請檢查新專案的 Storage Rules 是否已設為 allow read, write: if true;";
-                        }
-                        setErrorMsg("上傳失敗：" + msg);
-                    }, 
-                    async () => {
-                        try {
-                            const url = await getDownloadURL(uploadTask.snapshot.ref);
-                            
-                            await addDoc(collection(db, COLLECTION_NAME), {
-                                name: selectedFile.name,
-                                url: url,
-                                uploader: userRole === 'employee' ? '員工' : '老闆(測試)',
-                                status: 'pending',
-                                createdAt: serverTimestamp(),
-                                createdBy: user.uid,
-                                date: new Date().toISOString().split('T')[0]
-                            });
-                            
-                            setUploadStatus('success');
-                            setTimeout(() => {
-                                setShowUploadModal(false);
-                                setSelectedFile(null);
-                                setUploadStatus('idle');
-                                setProgress(0);
-                            }, 1000);
-                        } catch (dbError) {
-                            console.error("Firestore Save Error:", dbError);
-                            setUploadStatus('error');
-                            setErrorMsg("檔案上傳成功但寫入資料庫失敗：" + dbError.message);
-                        }
-                    }
-                );
-            };
-
-            const handleSign = async (docId) => {
+            const fetchDocuments = async () => {
+                setIsLoading(true);
                 try {
-                    const docRef = doc(db, COLLECTION_NAME, docId);
-                    await updateDoc(docRef, {
-                        status: 'signed',
-                        signedAt: serverTimestamp(),
-                        signedBy: 'Boss'
-                    });
-                } catch (err) {
-                    setErrorMsg("簽核失敗: " + err.message);
-                }
-            };
-
-            // 執行刪除
-            const confirmDeleteFile = async () => {
-                if (!deleteTarget) return;
-                setIsDeleting(true);
-
-                try {
-                    // 1. 嘗試刪除 Storage 實體檔案
-                    if (deleteTarget.url) {
-                        try {
-                            const fileRef = ref(storage, deleteTarget.url);
-                            await deleteObject(fileRef);
-                        } catch (storageErr) {
-                            console.warn("Storage 檔案刪除失敗或檔案不存在 (可能已被刪除)", storageErr);
-                            // 即使 Storage 刪除失敗，我們還是要繼續刪除 Firestore 資料
-                        }
-                    }
-
-                    // 2. 刪除 Firestore 紀錄
-                    await deleteDoc(doc(db, COLLECTION_NAME, deleteTarget.id));
-                    
-                    // 關閉 Modal
-                    setDeleteTarget(null);
-                } catch (err) {
-                    console.error("Delete Error:", err);
-                    setErrorMsg("刪除失敗: " + err.message);
+                    const response = await fetch(API_URL);
+                    const data = await response.json();
+                    const list = Array.isArray(data) ? data : [];
+                    const sortedData = list.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    setDocuments(sortedData);
+                } catch (error) {
+                    console.error("讀取失敗:", error);
+                    alert("讀取公文列表失敗，請檢查網路連線。");
                 } finally {
-                    setIsDeleting(false);
+                    setIsLoading(false);
                 }
             };
 
-            const openFile = (url) => window.open(url, '_blank');
-            const onFileChange = (e) => {
-                if(e.target.files && e.target.files[0]) setSelectedFile(e.target.files[0]);
-            }
+            const sendApiRequest = async (payload) => {
+                setIsLoading(true);
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        await fetchDocuments();
+                        return true;
+                    } else {
+                        throw new Error(result.message || '未知錯誤');
+                    }
+                } catch (error) {
+                    console.error("操作失敗:", error);
+                    if (error.message && error.message.includes("getFolderById")) {
+                        alert("系統設定錯誤：後端 Google Drive 資料夾 ID 無效。\n\n請打開您的 Google Apps Script 編輯器，檢查 `const FOLDER_ID` 是否已正確填入您的雲端資料夾 ID。");
+                    } else {
+                        alert(`操作失敗: ${error.message}`);
+                    }
+                    return false;
+                } finally {
+                    setIsLoading(false);
+                }
+            };
 
-            // --- 介面渲染 ---
+            const fileToBase64 = (file) => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = () => resolve(reader.result.split(',')[1]);
+                    reader.onerror = error => reject(error);
+                });
+            };
 
-            if (errorMsg) {
-                return (
-                    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-slate-50">
-                        <div className="text-red-500 mb-4 bg-red-100 p-4 rounded-full"><AlertCircle size={48} /></div>
-                        <h3 className="text-xl font-bold mb-2 text-slate-800">發生錯誤</h3>
-                        <p className="text-slate-600 mb-6 max-w-md mx-auto">{errorMsg}</p>
-                        <button onClick={() => window.location.reload()} className="bg-slate-800 text-white px-6 py-2 rounded-lg hover:bg-slate-700 transition-colors">重新整理</button>
-                    </div>
-                );
-            }
+            const getDownloadLink = (url) => {
+                if (!url) return '#';
+                try {
+                    const idMatch = url.match(/\/d\/(.*?)\//);
+                    if (idMatch && idMatch[1]) {
+                        return `https://drive.google.com/uc?export=download&id=${idMatch[1]}`;
+                    }
+                } catch (e) { console.error(e); }
+                return url;
+            };
 
-            if (!userRole) {
-                return (
-                    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white animate-fade-in">
-                        <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-blue-200">
-                            <Cloud className="text-white" size={32} />
-                        </div>
-                        <h1 className="text-2xl font-bold mb-8 text-slate-800">文檔簽核系統</h1>
-                        <div className="w-full max-w-sm space-y-4">
-                            <button onClick={() => setUserRole('boss')} className="w-full flex items-center p-4 border-2 border-slate-100 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all group">
-                                <div className="bg-blue-100 p-2 rounded-full mr-4 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors"><User size={20}/></div>
-                                <div className="flex-1 text-left font-bold text-slate-700">我是老闆</div>
-                                <ChevronRight className="text-slate-300 group-hover:text-blue-500" />
-                            </button>
-                            <button onClick={() => setUserRole('employee')} className="w-full flex items-center p-4 border-2 border-slate-100 rounded-xl hover:border-indigo-500 hover:bg-indigo-50 transition-all group">
-                                <div className="bg-indigo-100 p-2 rounded-full mr-4 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors"><Upload size={20}/></div>
-                                <div className="flex-1 text-left font-bold text-slate-700">我是員工</div>
-                                <ChevronRight className="text-slate-300 group-hover:text-indigo-500" />
-                            </button>
-                        </div>
-                        <p className="mt-8 text-xs text-slate-400">連線狀態: {user ? "已連線" : "連線中..."}</p>
-                    </div>
-                );
-            }
+            useEffect(() => {
+                if (currentUser) {
+                    fetchDocuments();
+                }
+            }, [currentUser]);
+
+            const handleLogin = (role, name = '') => {
+                setCurrentUser({ role, name });
+                setCurrentView('list');
+                setSelectedDoc(null);
+            };
+
+            const handleLogout = () => {
+                setCurrentUser(null);
+                setSelectedDoc(null);
+                setDocuments([]);
+            };
+
+            const handleUpload = async (file, title) => {
+                try {
+                    const base64Data = await fileToBase64(file);
+                    const success = await sendApiRequest({
+                        action: 'upload',
+                        id: `doc-${Date.now()}`,
+                        title: title || file.name,
+                        fileName: file.name,
+                        uploader: `會務-${currentUser.name}`,
+                        date: new Date().toISOString(),
+                        fileData: base64Data,
+                        mimeType: file.type
+                    });
+                    if (success) {
+                        alert('上傳成功！');
+                        setCurrentView('list');
+                    }
+                } catch (e) { 
+                    // error handled by sendApiRequest
+                }
+            };
+
+            const handleReupload = async (docId, newFile) => {
+                try {
+                    const base64Data = await fileToBase64(newFile);
+                    const oldDoc = documents.find(d => d.id === docId);
+                    const title = oldDoc ? oldDoc.title.replace(' (已修正)', '') + ' (已修正)' : newFile.name;
+                    const success = await sendApiRequest({
+                        action: 'reupload',
+                        id: docId,
+                        fileName: newFile.name,
+                        fileData: base64Data,
+                        title: title,
+                        mimeType: newFile.type
+                    });
+                    if (success) alert('重新上傳成功！');
+                } catch (e) { 
+                    // error handled by sendApiRequest
+                }
+            };
+
+            const handleChairmanSignUpload = async (docId, file) => {
+                try {
+                    const base64Data = await fileToBase64(file);
+                    const success = await sendApiRequest({
+                        action: 'chairman_sign',
+                        id: docId,
+                        fileName: file.name,
+                        fileData: base64Data,
+                        mimeType: file.type
+                    });
+                    if (success) alert('簽核回傳成功！');
+                } catch (e) { 
+                    // error handled by sendApiRequest
+                }
+            };
+
+            const handleDelete = async (docId) => {
+                if (window.confirm('確定要刪除這份公文嗎？\n資料庫與檔案將同步刪除。')) {
+                    const success = await sendApiRequest({ action: 'delete', id: docId });
+                    if (success && selectedDoc && selectedDoc.id === docId) {
+                        setSelectedDoc(null);
+                        setCurrentView('list');
+                    }
+                }
+            };
+
+            const openRejectModal = (docId) => {
+                setRejectDocId(docId);
+                setRejectReason('');
+                setRejectModalOpen(true);
+            };
+
+            const handleRejectConfirm = async () => {
+                if (!rejectReason.trim()) {
+                    alert('請輸入退回原因');
+                    return;
+                }
+                const success = await sendApiRequest({
+                    action: 'reject',
+                    id: rejectDocId,
+                    reason: rejectReason
+                });
+                if (success) {
+                    setRejectModalOpen(false);
+                    setRejectDocId(null);
+                    if (selectedDoc && selectedDoc.id === rejectDocId) {
+                        setSelectedDoc(null);
+                        setCurrentView('list');
+                    }
+                }
+            };
+
+            if (!currentUser) return <LoginPage onLogin={handleLogin} />;
 
             return (
-                <div className="min-h-screen pb-20 relative bg-slate-50">
-                    <div className="bg-white px-6 py-4 shadow-sm sticky top-0 z-10 flex justify-between items-center">
-                        <div>
-                            <h2 className="text-lg font-bold flex items-center gap-2 text-slate-800">
-                                {userRole === 'boss' ? '待辦簽核' : '我的文件'}
-                                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                            </h2>
-                            <p className="text-xs text-slate-500">{userRole === 'boss' ? '老闆視角' : '員工視角'}</p>
+                <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
+                    {isLoading && (
+                        <div className="fixed inset-0 z-[60] bg-black/50 flex flex-col items-center justify-center text-white">
+                            <Icons.Loader2 className="w-12 h-12 animate-spin mb-2" />
+                            <p className="font-bold">資料處理中，請稍候...</p>
                         </div>
-                        <button onClick={() => setUserRole(null)} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors"><LogOut size={20}/></button>
-                    </div>
+                    )}
 
-                    <div className="p-6">
-                        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex text-center">
-                            <div className="flex-1 border-r border-slate-100">
-                                <div className="text-2xl font-bold text-amber-500">{files.filter(f=>f.status==='pending').length}</div>
-                                <div className="text-xs text-slate-500">待簽核</div>
+                    <header className="bg-blue-900 text-white p-4 shadow-lg sticky top-0 z-10 safe-area-top">
+                        <div className="flex justify-between items-center max-w-lg mx-auto">
+                            <div className="flex items-center gap-2">
+                                <Icons.FileText className="w-8 h-8 text-yellow-400" />
+                                <div>
+                                    <div className="text-xs text-blue-200 tracking-wider">桃園市結構工程技師公會</div>
+                                    <h1 className="text-lg font-bold tracking-wide leading-tight">數位公文簽核系統</h1>
+                                </div>
                             </div>
-                            <div className="flex-1">
-                                <div className="text-2xl font-bold text-emerald-500">{files.filter(f=>f.status==='signed').length}</div>
-                                <div className="text-xs text-slate-500">已完成</div>
+                            <div className="flex items-center gap-3">
+                                <span className="text-xs bg-blue-800 px-3 py-1.5 rounded-full font-medium">
+                                    {userRole === 'staff' ? `會務 - ${currentUser.name}` : '理事長'}
+                                </span>
+                                <button onClick={handleLogout} className="text-white/80 hover:text-white p-1">
+                                    <Icons.LogOut className="w-5 h-5" />
+                                </button>
                             </div>
                         </div>
-                    </div>
+                    </header>
 
-                    <div className="px-6 space-y-4">
-                        {loading ? <div className="text-center py-10 text-slate-400"><Loader2 className="animate-spin mx-auto mb-2"/>讀取中...</div> : 
-                         files.length === 0 ? <div className="text-center py-10 text-slate-400"><Cloud size={48} className="mx-auto mb-4 opacity-20"/>尚無文件</div> :
-                         files.map(file => (
-                            <div key={file.id} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 animate-fade-in hover:shadow-md transition-shadow relative">
-                                <div className="flex justify-between items-start mb-3">
-                                    <div className="flex gap-3">
-                                        <div className={`p-2 rounded-lg ${file.status === 'signed' ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'}`}>
-                                            <FileText size={20} />
-                                        </div>
-                                        <div>
-                                            <div className="font-bold text-slate-800 line-clamp-1">{file.name}</div>
-                                            <div className="text-xs text-slate-500 mt-1">{file.uploader} • {file.date}</div>
-                                        </div>
-                                    </div>
-                                    {/* 右上角狀態 */}
-                                    {file.status === 'signed' ? 
-                                        <span className="flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-100"><CheckCircle size={12}/>已簽核</span> : 
-                                        <span className="flex items-center gap-1 text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-full border border-amber-100"><Clock size={12}/>待簽核</span>
+                    <main className="max-w-lg mx-auto p-4 pb-20">
+                        {currentView === 'list' && (
+                            <Dashboard 
+                                role={userRole} 
+                                documents={documents} 
+                                onSelectDoc={(doc) => {
+                                    if (userRole !== 'chairman') {
+                                        setSelectedDoc(doc);
+                                        setCurrentView('detail');
                                     }
+                                }}
+                                onGoToUpload={() => setCurrentView('upload')}
+                                onDelete={handleDelete}
+                                onReject={openRejectModal} 
+                                onReupload={handleReupload}
+                                onChairmanSignUpload={handleChairmanSignUpload}
+                                onRefresh={fetchDocuments}
+                                getDownloadLink={getDownloadLink}
+                            />
+                        )}
+
+                        {currentView === 'upload' && (
+                            <UploadPage onCancel={() => setCurrentView('list')} onUpload={handleUpload} />
+                        )}
+
+                        {currentView === 'detail' && selectedDoc && (
+                            <DetailPage 
+                                doc={selectedDoc} 
+                                role={userRole}
+                                onBack={() => { setSelectedDoc(null); setCurrentView('list'); }}
+                                onReject={() => openRejectModal(selectedDoc.id)}
+                            />
+                        )}
+                    </main>
+
+                    {rejectModalOpen && (
+                        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 animate-in fade-in duration-200">
+                            <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-xl space-y-4">
+                                <div className="flex items-center gap-3 text-red-600">
+                                    <Icons.AlertCircle className="w-6 h-6" />
+                                    <h3 className="font-bold text-lg">退回公文</h3>
                                 </div>
-                                
-                                <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-50">
-                                    <div className="flex gap-2 w-full">
-                                    {userRole === 'boss' && file.status === 'pending' ? (
-                                        <>
-                                            <button onClick={() => openFile(file.url)} className="flex-1 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium flex items-center justify-center gap-1 hover:bg-slate-200 transition-colors"><Eye size={16}/> 預覽</button>
-                                            <button onClick={() => handleSign(file.id)} className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">批准簽核</button>
-                                        </>
-                                    ) : (
-                                        <button onClick={() => openFile(file.url)} className="text-sm text-blue-500 flex items-center gap-1 hover:text-blue-700 transition-colors"><Download size={14}/> 下載/查看</button>
-                                    )}
-                                    </div>
-
-                                    {/* 刪除按鈕 (所有人都可見) */}
-                                    <button 
-                                        onClick={() => setDeleteTarget(file)} 
-                                        className="ml-2 p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                        title="刪除檔案"
-                                    >
-                                        <Trash2 size={18} />
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {userRole === 'employee' && (
-                        <button onClick={() => setShowUploadModal(true)} className="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-xl shadow-indigo-300 flex items-center justify-center hover:scale-105 transition-all z-20 hover:bg-indigo-700">
-                            <Plus size={28} />
-                        </button>
-                    )}
-
-                    {/* 上傳 Modal */}
-                    {showUploadModal && (
-                        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4 backdrop-blur-sm">
-                            <div className="bg-white w-full max-w-sm rounded-2xl p-6 animate-slide-up sm:animate-fade-in">
-                                <div className="flex justify-between items-center mb-6">
-                                    <h3 className="text-lg font-bold text-slate-800">上傳文件</h3>
-                                    <button onClick={() => { if(uploadStatus!=='uploading') setShowUploadModal(false); }}><X size={24} className="text-slate-400 hover:text-slate-600"/></button>
-                                </div>
-                                <form onSubmit={handleUpload} className="space-y-4">
-                                    <label className={`block border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${selectedFile ? 'border-indigo-300 bg-indigo-50' : 'border-slate-200 hover:border-indigo-300 hover:bg-slate-50'}`}>
-                                        <input type="file" className="hidden" accept=".pdf" onChange={onFileChange} disabled={uploadStatus === 'uploading'} />
-                                        {selectedFile ? (
-                                            <div><FileText className="mx-auto text-indigo-500 mb-2" size={32}/><div className="text-indigo-700 font-bold break-all line-clamp-2">{selectedFile.name}</div></div>
-                                        ) : (
-                                            <div><Upload className="mx-auto text-slate-300 mb-2" size={32}/><div className="text-slate-500 font-medium">點擊選擇 PDF</div></div>
-                                        )}
-                                    </label>
-
-                                    {/* 進度條 */}
-                                    {uploadStatus === 'uploading' && (
-                                        <div className="space-y-2">
-                                            <div className="flex justify-between text-xs text-slate-500">
-                                                <span>上傳中...</span>
-                                                <span>{progress}%</span>
-                                            </div>
-                                            <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                                                <div className="bg-indigo-600 h-full transition-all duration-300" style={{width: `${progress}%`}}></div>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <button type="submit" disabled={!selectedFile || uploadStatus === 'uploading'} className="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl disabled:opacity-50 flex justify-center items-center gap-2 hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200">
-                                        {uploadStatus === 'uploading' ? <><Loader2 className="animate-spin" size={20}/> 處理中...</> : 
-                                         uploadStatus === 'success' ? <><CheckCircle size={20}/> 上傳成功</> : "確認上傳"}
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* 刪除確認 Modal */}
-                    {deleteTarget && (
-                        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-                            <div className="bg-white w-full max-w-xs rounded-2xl p-6 animate-fade-in shadow-2xl">
-                                <div className="text-center">
-                                    <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4 text-red-500">
-                                        <Trash2 size={24} />
-                                    </div>
-                                    <h3 className="text-lg font-bold text-slate-800 mb-2">確認刪除？</h3>
-                                    <p className="text-sm text-slate-500 mb-6">
-                                        您即將刪除 <span className="font-bold text-slate-700">{deleteTarget.name}</span>。<br/>
-                                        此動作無法復原。
-                                    </p>
-                                    <div className="flex gap-3">
-                                        <button 
-                                            onClick={() => setDeleteTarget(null)}
-                                            disabled={isDeleting}
-                                            className="flex-1 py-2 bg-slate-100 text-slate-600 rounded-xl font-medium hover:bg-slate-200 transition-colors"
-                                        >
-                                            取消
-                                        </button>
-                                        <button 
-                                            onClick={confirmDeleteFile}
-                                            disabled={isDeleting}
-                                            className="flex-1 py-2 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
-                                        >
-                                            {isDeleting ? <Loader2 className="animate-spin" size={16}/> : "刪除"}
-                                        </button>
-                                    </div>
+                                <p className="text-slate-600 text-sm">請輸入退回原因，以便會務人員修正。</p>
+                                <textarea 
+                                    value={rejectReason}
+                                    onChange={(e) => setRejectReason(e.target.value)}
+                                    placeholder="例如：金額計算錯誤，請修正後重新上傳..."
+                                    className="w-full h-32 p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-red-500 outline-none text-sm resize-none"
+                                />
+                                <div className="flex gap-3 pt-2">
+                                    <button onClick={() => setRejectModalOpen(false)} className="flex-1 py-2.5 rounded-xl border border-slate-300 text-slate-600 font-bold hover:bg-slate-50">取消</button>
+                                    <button onClick={handleRejectConfirm} className="flex-1 py-2.5 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 shadow-md">確認退回</button>
                                 </div>
                             </div>
                         </div>
                     )}
-
                 </div>
             );
-        };
+        }
+
+        function Dashboard({ role, documents, onSelectDoc, onGoToUpload, onDelete, onReject, onReupload, onChairmanSignUpload, onRefresh, getDownloadLink }) {
+            const pendingDocs = documents.filter(d => d.status === 'pending');
+            const signedDocs = documents.filter(d => d.status === 'signed');
+            const displayDocs = role === 'chairman' ? pendingDocs : documents;
+
+            return (
+                <div className="space-y-6">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                            <div className="text-slate-500 text-xs font-medium mb-1">待簽核公文</div>
+                            <div className="text-3xl font-bold text-orange-500">{pendingDocs.length}</div>
+                        </div>
+                        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                            <div className="text-slate-500 text-xs font-medium mb-1">目前已完成簽核</div>
+                            <div className="text-3xl font-bold text-green-600">{signedDocs.length}</div>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                        {role === 'staff' && (
+                            <button onClick={onGoToUpload} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl shadow-md flex items-center justify-center gap-2 font-bold transition-transform active:scale-95">
+                                <Icons.Upload className="w-5 h-5" /> 上傳新公文
+                            </button>
+                        )}
+                        {/* 僅在非理事長身分時顯示重新整理按鈕 */}
+                        {role !== 'chairman' && (
+                            <button onClick={onRefresh} className="bg-slate-200 hover:bg-slate-300 text-slate-700 py-3 px-4 rounded-xl shadow-sm flex items-center justify-center transition-transform active:scale-95" title="重新整理列表">
+                                <Icons.RefreshCw className="w-5 h-5" />
+                            </button>
+                        )}
+                    </div>
+
+                    <div>
+                        <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
+                            {role === 'chairman' ? '待辦事項' : '公文列表'}
+                            <span className="bg-slate-200 text-slate-600 text-xs px-2 py-0.5 rounded-full">{displayDocs.length}</span>
+                        </h2>
+                        
+                        <div className="space-y-3">
+                            {displayDocs.length === 0 ? (
+                                <div className="text-center py-10 bg-white rounded-xl border border-dashed border-slate-300">
+                                    <div className="text-slate-400">{role === 'chairman' ? '目前沒有待辦公文' : '目前沒有公文'}</div>
+                                </div>
+                            ) : (
+                                displayDocs.map(doc => (
+                                    <div 
+                                        key={doc.id}
+                                        onClick={() => onSelectDoc(doc)}
+                                        className={`bg-white p-4 rounded-xl shadow-sm border ${role !== 'chairman' ? 'active:bg-slate-50 cursor-pointer' : ''} flex items-center justify-between group relative overflow-hidden ${doc.status === 'returned' ? 'border-red-200 bg-red-50/30' : 'border-slate-100'}`}
+                                    >
+                                        <div className="flex-1 min-w-0 pr-2">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                {doc.status === 'signed' && <span className="bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded font-bold">已簽核</span>}
+                                                {doc.status === 'pending' && <span className="bg-orange-100 text-orange-700 text-[10px] px-2 py-0.5 rounded font-bold flex items-center gap-1"><Icons.Clock className="w-3 h-3" /> 待處理</span>}
+                                                {doc.status === 'returned' && <span className="bg-red-100 text-red-700 text-[10px] px-2 py-0.5 rounded font-bold flex items-center gap-1"><Icons.RotateCcw className="w-3 h-3" /> 已退回</span>}
+                                                <span className="text-xs text-slate-400">{doc.date.split('T')[0]}</span>
+                                            </div>
+
+                                            <h3 className="font-bold text-slate-800 truncate">{doc.title}</h3>
+                                            
+                                            {/* 檔案名稱顯示 */}
+                                            {doc.fileName ? (
+                                                <div className="mt-1">
+                                                    <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded border border-slate-200 inline-flex items-center gap-1 max-w-full truncate">
+                                                        📄 {doc.fileName}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <div className="mt-1 h-6"></div>
+                                            )}
+
+                                            <p className="text-xs text-slate-400 mt-1">上傳者：{doc.uploader}</p>
+                                            
+                                            {doc.status === 'returned' && (
+                                                <div className="mt-2 text-xs text-red-600 bg-red-100/50 p-2 rounded-lg flex items-start gap-1">
+                                                    <Icons.AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                                                    <span>退回原因：{doc.returnReason}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        
+                                        <div className="flex items-center gap-2 pl-2 border-l border-slate-100 ml-2">
+                                            
+                                            {/* 理事長：待辦事項的操作按鈕 */}
+                                            {role === 'chairman' && doc.status === 'pending' && (
+                                                <>
+                                                    {/* 1. 下載檔案 (移除 target=_blank) */}
+                                                    <a 
+                                                        href={getDownloadLink(doc.fileUrl)} 
+                                                        onClick={(e) => e.stopPropagation()} 
+                                                        className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-full transition-colors" 
+                                                        title="下載檔案"
+                                                    >
+                                                        <Icons.Download className="w-5 h-5" />
+                                                    </a>
+
+                                                    {/* 2. 簽核回傳 (上傳) */}
+                                                    <div className="relative">
+                                                        <input type="file" accept=".pdf, .jpg, .jpeg, .png"
+                                                            onChange={(e) => {
+                                                                if (e.target.files[0]) {
+                                                                    onChairmanSignUpload(doc.id, e.target.files[0]);
+                                                                }
+                                                            }}
+                                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                            title="簽核回傳 (上傳已簽名檔案)"
+                                                        />
+                                                        <button className="p-2 text-green-600 bg-green-50 hover:bg-green-100 rounded-full transition-colors pointer-events-none">
+                                                            <Icons.FileCheck className="w-5 h-5" />
+                                                        </button>
+                                                    </div>
+
+                                                    {/* 3. 退回公文 */}
+                                                    <button onClick={() => onReject(doc.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors" title="退回此公文">
+                                                        <Icons.RotateCcw className="w-5 h-5" />
+                                                    </button>
+                                                </>
+                                            )}
+
+                                            {/* 會務人員：重新上傳 */}
+                                            {role === 'staff' && doc.status === 'returned' && (
+                                                <div className="relative">
+                                                    <input type="file" accept=".pdf, .jpg, .jpeg, .png"
+                                                        onChange={(e) => {
+                                                            e.stopPropagation();
+                                                            if (e.target.files[0]) {
+                                                                onReupload(doc.id, e.target.files[0]);
+                                                            }
+                                                        }}
+                                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                        title="重新上傳修正檔案"
+                                                        onClick={(e) => e.stopPropagation()} 
+                                                    />
+                                                    <button className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-full transition-colors pointer-events-none">
+                                                        <Icons.RefreshCw className="w-5 h-5" />
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {/* 已簽核下載 (移除 target=_blank) */}
+                                            {doc.status === 'signed' && (
+                                                <a 
+                                                    href={getDownloadLink(doc.fileUrl)} 
+                                                    onClick={(e) => e.stopPropagation()} 
+                                                    className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-full transition-colors" 
+                                                    title="下載已簽核檔案"
+                                                >
+                                                    <Icons.Download className="w-5 h-5" />
+                                                </a>
+                                            )}
+
+                                            {role === 'staff' && (
+                                                <button onClick={(e) => { e.stopPropagation(); onDelete(doc.id); }} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors" title="刪除此公文">
+                                                    <Icons.Trash2 className="w-5 h-5" />
+                                                </button>
+                                            )}
+                                            
+                                            {role !== 'chairman' && <Icons.ChevronRight className="w-4 h-4 text-slate-300 hidden sm:block" />}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function UploadPage({ onCancel, onUpload }) {
+            const [file, setFile] = useState(null);
+            const [title, setTitle] = useState('');
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (file) {
+                    onUpload(file, title);
+                }
+            };
+
+            return (
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div className="bg-slate-50 px-4 py-3 border-b border-slate-100 flex justify-between items-center">
+                        <h3 className="font-bold">上傳公文</h3>
+                        <button onClick={onCancel} className="p-1 rounded-full hover:bg-slate-200"><Icons.X className="w-5 h-5 text-slate-500" /></button>
+                    </div>
+                    <form onSubmit={handleSubmit} className="p-6 space-y-6">
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-2">公文標題</label>
+                            <input type="text" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="例如：113年度活動預算表" className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-2">選擇檔案 (PDF 或 圖片)</label>
+                            <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center bg-slate-50 hover:bg-blue-50 transition-colors">
+                                <input type="file" accept=".pdf, .jpg, .jpeg, .png" required onChange={(e) => { const f = e.target.files[0]; setFile(f); if (f && !title) setTitle(f.name.replace(/\.[^/.]+$/, "")); }} className="hidden" id="file-upload" />
+                                <label htmlFor="file-upload" className="cursor-pointer block">
+                                    {file && file.type.startsWith('image/') ? <Icons.Image className="w-8 h-8 text-slate-400 mx-auto mb-2" /> : <Icons.Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />}
+                                    {file ? <span className="text-blue-600 font-bold block break-all">{file.name}</span> : <span className="text-slate-500">點擊上傳 PDF 或 圖片檔案</span>}
+                                </label>
+                            </div>
+                        </div>
+                        <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed" disabled={!file}>確認上傳</button>
+                    </form>
+                </div>
+            );
+        }
+
+        function DetailPage({ doc, role, onBack, onReject }) {
+            return (
+                <div className="flex flex-col h-[85vh]">
+                    <div className="mb-4 flex items-center gap-2">
+                        <button onClick={onBack} className="p-2 -ml-2 rounded-full hover:bg-slate-200"><Icons.ChevronRight className="w-6 h-6 rotate-180 text-slate-600" /></button>
+                        <h2 className="font-bold text-lg truncate flex-1">{doc.title}</h2>
+                    </div>
+                    <div className="flex-1 bg-slate-200 rounded-xl overflow-hidden relative border border-slate-300 shadow-inner flex flex-col">
+                        {doc.status === 'returned' && <div className="bg-red-500 text-white text-xs p-2 text-center font-bold z-10 shadow-md">⚠️ 此公文已被退回：{doc.returnReason}</div>}
+                        <div className="flex-1 relative flex flex-col">
+                            <iframe src={doc.fileUrl} className="flex-1 w-full" title="File Preview" allow="autoplay" />
+                            <div className="bg-blue-50 p-2 text-center border-t border-blue-100">
+                                <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 font-bold flex items-center justify-center gap-1 hover:underline"><Icons.ExternalLink className="w-3 h-3" /> 無法預覽？點此另開視窗檢視</a>
+                            </div>
+                            {doc.status === 'signed' && (
+                                <div className="absolute bottom-12 right-10 pointer-events-none z-20">
+                                    <div className="border-4 border-red-600 text-red-600 font-bold rounded p-2 rotate-[-15deg] opacity-80 text-xl">已簽核</div>
+                                    <div className="text-[10px] text-red-600 font-bold text-center mt-1">{doc.date.split('T')[0]}</div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function LoginPage({ onLogin }) {
+            const [view, setView] = useState('main');
+            if (view === 'staff-select') {
+                return (
+                    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-800 p-6">
+                        <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+                            <div className="bg-green-600 p-6 relative">
+                                <button onClick={() => setView('main')} className="absolute left-4 top-6 text-white/80 hover:text-white"><Icons.ArrowLeft className="w-6 h-6" /></button>
+                                <div className="text-center"><Icons.Users className="w-12 h-12 text-white mx-auto mb-2" /><h1 className="text-xl font-bold text-white">請選擇會務人員</h1></div>
+                            </div>
+                            <div className="p-6 space-y-3">
+                                {STAFF_MEMBERS.map((name) => (
+                                    <button key={name} onClick={() => onLogin('staff', name)} className="w-full flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl hover:bg-green-50 hover:border-green-300 transition-all group">
+                                        <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold text-sm">{name[0]}</div><span className="font-bold text-slate-700">{name}</span></div><Icons.ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-green-500" />
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+            return (
+                <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-900 to-slate-800 p-6">
+                    <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden">
+                        <div className="bg-blue-600 p-6 text-center">
+                            <Icons.FileText className="w-16 h-16 text-white mx-auto mb-4" />
+                            <h2 className="text-xl font-bold text-white mb-2 tracking-wider">桃園市結構工程技師公會</h2>
+                            <h1 className="text-2xl font-bold text-white">數位公文簽核</h1>
+                        </div>
+                        <div className="p-8 space-y-4">
+                            <button onClick={() => onLogin('chairman', '理事長')} className="w-full flex items-center p-4 bg-slate-50 border-2 border-slate-100 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all group">
+                                <div className="bg-blue-100 p-3 rounded-full mr-4 group-hover:bg-blue-200"><Icons.User className="w-6 h-6 text-blue-700" /></div>
+                                <div className="text-left"><div className="font-bold text-slate-800">我是理事長</div><div className="text-xs text-slate-500">查看待辦、簽核公文</div></div>
+                            </button>
+                            <button onClick={() => setView('staff-select')} className="w-full flex items-center p-4 bg-slate-50 border-2 border-slate-100 rounded-xl hover:border-green-500 hover:bg-green-50 transition-all group">
+                                <div className="bg-green-100 p-3 rounded-full mr-4 group-hover:bg-green-200"><Icons.Users className="w-6 h-6 text-green-700" /></div>
+                                <div className="text-left"><div className="font-bold text-slate-800">我是會務人員</div><div className="text-xs text-slate-500">上傳公文、查詢進度</div></div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
