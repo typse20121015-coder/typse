@@ -452,7 +452,7 @@
                                                     </div>
 
                                                     {/* 3. 退回公文 */}
-                                                    <button onClick={() => onReject(doc.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors relative z-10" title="退回此公文">
+                                                    <button onClick={() => onReject(doc.id)} className="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-full transition-colors relative z-10" title="退回此公文">
                                                         <Icons.RotateCcw className="w-5 h-5" />
                                                     </button>
                                                 </>
@@ -501,7 +501,7 @@
                                             )}
 
                                             {role === 'staff' && (
-                                                <button onClick={(e) => { e.stopPropagation(); onDelete(doc.id); }} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors" title="刪除此公文">
+                                                <button onClick={(e) => { e.stopPropagation(); onDelete(doc.id); }} className="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-full transition-colors" title="刪除此公文">
                                                     <Icons.Trash2 className="w-5 h-5" />
                                                 </button>
                                             )}
