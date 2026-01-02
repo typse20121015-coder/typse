@@ -291,12 +291,7 @@
                             <Dashboard 
                                 role={userRole} 
                                 documents={documents} 
-                                onSelectDoc={(doc) => {
-                                    if (userRole !== 'chairman') {
-                                        setSelectedDoc(doc);
-                                        setCurrentView('detail');
-                                    }
-                                }}
+                                onSelectDoc={() => {}} 
                                 onGoToUpload={() => setCurrentView('upload')}
                                 onDelete={handleDelete}
                                 onReject={openRejectModal} 
@@ -311,6 +306,7 @@
                             <UploadPage onCancel={() => setCurrentView('list')} onUpload={handleUpload} />
                         )}
 
+                        {/* DetailPage is unreachable now but kept for code integrity */}
                         {currentView === 'detail' && selectedDoc && (
                             <DetailPage 
                                 doc={selectedDoc} 
@@ -393,8 +389,7 @@
                                 displayDocs.map(doc => (
                                     <div 
                                         key={doc.id}
-                                        onClick={() => onSelectDoc(doc)}
-                                        className={`bg-white p-4 rounded-xl shadow-sm border ${role !== 'chairman' ? 'active:bg-slate-50 cursor-pointer' : ''} flex items-center justify-between group relative overflow-hidden ${doc.status === 'returned' ? 'border-red-200 bg-red-50/30' : 'border-slate-100'}`}
+                                        className={`bg-white p-4 rounded-xl shadow-sm border flex items-center justify-between group relative overflow-hidden ${doc.status === 'returned' ? 'border-red-200 bg-red-50/30' : 'border-slate-100'}`}
                                     >
                                         <div className="flex-1 min-w-0 pr-2">
                                             <div className="flex items-center gap-2 mb-1">
@@ -442,8 +437,8 @@
                                                         <Icons.Download className="w-5 h-5" />
                                                     </a>
 
-                                                    {/* 2. 簽核回傳 (上傳) */}
-                                                    <div className="relative">
+                                                    {/* 2. 簽核回傳 (上傳) - 修正 Hover 效果 */}
+                                                    <div className="relative p-2 text-green-600 bg-green-50 hover:bg-green-100 rounded-full transition-colors">
                                                         <input type="file" accept=".pdf, .jpg, .jpeg, .png"
                                                             onChange={(e) => {
                                                                 if (e.target.files[0]) {
@@ -453,9 +448,7 @@
                                                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                                             title="簽核回傳 (上傳已簽名檔案)"
                                                         />
-                                                        <button className="p-2 text-green-600 bg-green-50 hover:bg-green-100 rounded-full transition-colors pointer-events-none">
-                                                            <Icons.FileCheck className="w-5 h-5" />
-                                                        </button>
+                                                        <Icons.FileCheck className="w-5 h-5 pointer-events-none" />
                                                     </div>
 
                                                     {/* 3. 退回公文 */}
@@ -465,9 +458,9 @@
                                                 </>
                                             )}
 
-                                            {/* 會務人員：重新上傳 */}
+                                            {/* 會務人員：重新上傳 - 修正 Hover 效果 */}
                                             {role === 'staff' && doc.status === 'returned' && (
-                                                <div className="relative">
+                                                <div className="relative p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-full transition-colors">
                                                     <input type="file" accept=".pdf, .jpg, .jpeg, .png"
                                                         onChange={(e) => {
                                                             e.stopPropagation();
@@ -479,13 +472,23 @@
                                                         title="重新上傳修正檔案"
                                                         onClick={(e) => e.stopPropagation()} 
                                                     />
-                                                    <button className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-full transition-colors pointer-events-none">
-                                                        <Icons.RefreshCw className="w-5 h-5" />
-                                                    </button>
+                                                    <Icons.RefreshCw className="w-5 h-5 pointer-events-none" />
                                                 </div>
                                             )}
 
-                                            {/* 已簽核下載 (移除 target=_blank) */}
+                                            {/* 會務人員：下載按鈕 (除了已簽核，其他狀態也都顯示) */}
+                                            {role === 'staff' && doc.status !== 'signed' && (
+                                                <a 
+                                                    href={getDownloadLink(doc.fileUrl)} 
+                                                    onClick={(e) => e.stopPropagation()} 
+                                                    className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-full transition-colors" 
+                                                    title="下載檔案"
+                                                >
+                                                    <Icons.Download className="w-5 h-5" />
+                                                </a>
+                                            )}
+
+                                            {/* 已簽核下載 (共同) */}
                                             {doc.status === 'signed' && (
                                                 <a 
                                                     href={getDownloadLink(doc.fileUrl)} 
@@ -502,8 +505,6 @@
                                                     <Icons.Trash2 className="w-5 h-5" />
                                                 </button>
                                             )}
-                                            
-                                            {role !== 'chairman' && <Icons.ChevronRight className="w-4 h-4 text-slate-300 hidden sm:block" />}
                                         </div>
                                     </div>
                                 ))
