@@ -139,7 +139,8 @@
             const handleMemberDateChange = (val) => setFormData({ ...formData, memberBirthday: val });
             const handleMemberMealChange = (val) => setFormData({ ...formData, memberMeal: val });
 
-            const addGuest = () => setFormData({ ...formData, guests: [...formData.guests, { name: '', relationship: '配偶', birthday: '', meal: '葷食' }] });
+            // 更新：新增攜伴時，預設稱謂改為 '配偶/伴侶'
+            const addGuest = () => setFormData({ ...formData, guests: [...formData.guests, { name: '', relationship: '配偶/伴侶', birthday: '', meal: '葷食' }] });
             const removeGuest = (index) => setFormData({ ...formData, guests: formData.guests.filter((_, i) => i !== index) });
             const handleGuestChange = (index, field, value) => {
                 const newGuests = [...formData.guests];
@@ -149,8 +150,13 @@
 
             const handleSubmit = async (e) => {
                 e.preventDefault();
+                // 強制驗證：會員姓名、會員生日
+                if (!formData.memberName || formData.memberName.trim() === '') return alert("請輸入會員姓名");
                 if (formData.memberBirthday.length !== 4 || !isValidDate(formData.memberBirthday)) return alert("請檢查會員生日格式 (如0520)");
+                
+                // 強制驗證：攜伴姓名、攜伴生日
                 for (const guest of formData.guests) {
+                    if (!guest.name || guest.name.trim() === '') return alert("請輸入攜伴姓名");
                     if (guest.birthday.length !== 4 || !isValidDate(guest.birthday)) return alert(`請檢查攜伴「${guest.name}」的生日格式`);
                 }
                 const success = await onSubmit(formData);
@@ -193,8 +199,9 @@
                         </div>
                     </div>
                     <div className="space-y-4 mb-8">
-                        <div className="flex justify-between items-center mb-2">
-                            <h3 className="font-medium text-gray-800 bg-gray-100 p-3 rounded-lg flex items-center gap-2 flex-grow mr-2">
+                        {/* 更新：調整為 justify-start 並加上 gap-4，讓新增按鈕緊接在後 */}
+                        <div className="flex items-center mb-2 gap-4">
+                            <h3 className="font-medium text-gray-800 bg-gray-100 p-3 rounded-lg flex items-center gap-2">
                                 <span className="w-1.5 h-5 bg-green-500 rounded-full block"></span> 攜伴 ({formData.guests.length})
                             </h3>
                             <button type="button" onClick={addGuest} className="btn-icon text-sm bg-green-500 hover:bg-green-600 text-white px-4 py-2.5 rounded-lg gap-2 transition shadow-sm whitespace-nowrap active:scale-95">
@@ -212,8 +219,11 @@
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="block text-xs font-medium text-gray-500 mb-1 ml-1">稱謂</label>
+                                    {/* 更新：修改選項 */}
                                     <select value={guest.relationship} onChange={(e) => handleGuestChange(index, 'relationship', e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg text-base bg-white focus:outline-none focus:border-indigo-400">
-                                        <option value="配偶">配偶</option><option value="父母">父母</option><option value="子女">子女</option><option value="親友">親友</option>
+                                        <option value="配偶/伴侶">配偶/伴侶</option>
+                                        <option value="父母">父母</option>
+                                        <option value="子女">子女</option>
                                     </select>
                                 </div>
                                 <div className="md:col-span-3">
@@ -249,7 +259,8 @@
                 newGuests[index][field] = value;
                 setFormData({ ...formData, guests: newGuests });
             };
-            const addGuest = () => setFormData({ ...formData, guests: [...(formData.guests || []), { name: '', relationship: '配偶', birthday: '', meal: '葷食' }] });
+            // 更新：新增攜伴時，預設稱謂改為 '配偶/伴侶'
+            const addGuest = () => setFormData({ ...formData, guests: [...(formData.guests || []), { name: '', relationship: '配偶/伴侶', birthday: '', meal: '葷食' }] });
             const removeGuest = (index) => setFormData({ ...formData, guests: formData.guests.filter((_, i) => i !== index) });
 
             return (
@@ -279,7 +290,8 @@
                                         <div key={index} className="flex flex-col md:flex-row gap-2 md:items-center bg-gray-50 p-3 rounded border border-gray-100">
                                             <div className="flex-1 grid grid-cols-2 gap-2">
                                                 <input type="text" placeholder="姓名" value={guest.name} onChange={(e) => handleGuestChange(index, 'name', e.target.value)} className="w-full p-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-indigo-400" />
-                                                <select value={guest.relationship} onChange={(e) => handleGuestChange(index, 'relationship', e.target.value)} className="w-full p-2 border border-gray-300 rounded text-sm"><option value="配偶">配偶</option><option value="父母">父母</option><option value="子女">子女</option><option value="親友">親友</option></select>
+                                                {/* 更新：修改選項 */}
+                                                <select value={guest.relationship} onChange={(e) => handleGuestChange(index, 'relationship', e.target.value)} className="w-full p-2 border border-gray-300 rounded text-sm"><option value="配偶/伴侶">配偶/伴侶</option><option value="父母">父母</option><option value="子女">子女</option></select>
                                             </div>
                                             <div className="flex-1 grid grid-cols-2 gap-2">
                                                 <DateDigitInput value={guest.birthday} onChange={(val) => handleGuestChange(index, 'birthday', val)} placeholder="生日" />
