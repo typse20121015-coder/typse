@@ -132,7 +132,7 @@
             </header>
         );
 
-        // --- 新增：停車資訊彈窗元件 ---
+        // --- 新增：停車資訊彈窗元件 (包含地址) ---
         const ParkingModal = ({ onClose }) => (
             <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm animate-fade-in">
                 <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100">
@@ -149,6 +149,7 @@
                             <span className="bg-indigo-100 text-indigo-700 font-bold rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 text-sm mt-0.5">1</span>
                             <div>
                                 <strong className="block text-gray-900 mb-1">大眾草莓園：</strong>
+                                <p className="text-sm text-gray-500 mb-1">新竹縣關西鎮638號 石光里13鄰</p>
                                 <p className="text-sm">週邊白線處可免費停車</p>
                             </div>
                         </div>
@@ -156,6 +157,7 @@
                             <span className="bg-indigo-100 text-indigo-700 font-bold rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 text-sm mt-0.5">2</span>
                             <div>
                                 <strong className="block text-gray-900 mb-1">劉家莊燜雞：</strong>
+                                <p className="text-sm text-gray-500 mb-1">305新竹縣新埔鎮照門里九芎湖六鄰16之2號</p>
                                 <p className="text-sm">備有50個免費停車位，若額滿請至對面付費停車場</p>
                             </div>
                         </div>
