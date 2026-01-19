@@ -71,6 +71,7 @@
             X: (props) => <IconBase {...props}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></IconBase>,
             Gift: (props) => <IconBase {...props}><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></IconBase>,
             MapPin: (props) => <IconBase {...props}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></IconBase>,
+            Info: (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></IconBase>,
         };
 
         // --- 輔助函式 ---
@@ -131,6 +132,41 @@
             </header>
         );
 
+        // --- 新增：停車資訊彈窗元件 ---
+        const ParkingModal = ({ onClose }) => (
+            <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm animate-fade-in">
+                <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100">
+                    <div className="p-4 bg-indigo-600 flex justify-between items-center text-white">
+                        <h3 className="text-lg font-bold flex items-center gap-2">
+                            <Icons.MapPin className="w-5 h-5" /> 停車資訊
+                        </h3>
+                        <button onClick={onClose} className="hover:bg-indigo-700 p-1 rounded-full transition">
+                            <Icons.X className="w-5 h-5" />
+                        </button>
+                    </div>
+                    <div className="p-6 space-y-5 text-gray-700">
+                        <div className="flex gap-3 items-start">
+                            <span className="bg-indigo-100 text-indigo-700 font-bold rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 text-sm mt-0.5">1</span>
+                            <div>
+                                <strong className="block text-gray-900 mb-1">大眾草莓園：</strong>
+                                <p className="text-sm">週邊白線處可免費停車</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-3 items-start">
+                            <span className="bg-indigo-100 text-indigo-700 font-bold rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 text-sm mt-0.5">2</span>
+                            <div>
+                                <strong className="block text-gray-900 mb-1">劉家莊燜雞：</strong>
+                                <p className="text-sm">備有50個免費停車位，若額滿請至對面付費停車場</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="p-4 bg-gray-50 border-t flex justify-center">
+                        <button onClick={onClose} className="bg-indigo-600 text-white px-8 py-2 rounded-lg hover:bg-indigo-700 transition shadow-sm font-medium">了解</button>
+                    </div>
+                </div>
+            </div>
+        );
+
         const RegistrationForm = ({ onSubmit, isSubmitting }) => {
             const [formData, setFormData] = useState({ memberName: '', memberBirthday: '', memberMeal: '葷食', guests: [] });
             const [showSuccess, setShowSuccess] = useState(false);
@@ -139,7 +175,6 @@
             const handleMemberDateChange = (val) => setFormData({ ...formData, memberBirthday: val });
             const handleMemberMealChange = (val) => setFormData({ ...formData, memberMeal: val });
 
-            // 更新：新增攜伴時，預設稱謂改為 '配偶/伴侶'
             const addGuest = () => setFormData({ ...formData, guests: [...formData.guests, { name: '', relationship: '配偶/伴侶', birthday: '', meal: '葷食' }] });
             const removeGuest = (index) => setFormData({ ...formData, guests: formData.guests.filter((_, i) => i !== index) });
             const handleGuestChange = (index, field, value) => {
@@ -150,11 +185,8 @@
 
             const handleSubmit = async (e) => {
                 e.preventDefault();
-                // 強制驗證：會員姓名、會員生日
                 if (!formData.memberName || formData.memberName.trim() === '') return alert("請輸入會員姓名");
                 if (formData.memberBirthday.length !== 4 || !isValidDate(formData.memberBirthday)) return alert("請檢查會員生日格式 (如0520)");
-                
-                // 強制驗證：攜伴姓名、攜伴生日
                 for (const guest of formData.guests) {
                     if (!guest.name || guest.name.trim() === '') return alert("請輸入攜伴姓名");
                     if (guest.birthday.length !== 4 || !isValidDate(guest.birthday)) return alert(`請檢查攜伴「${guest.name}」的生日格式`);
@@ -199,7 +231,6 @@
                         </div>
                     </div>
                     <div className="space-y-4 mb-8">
-                        {/* 更新：調整為 justify-start 並加上 gap-4，讓新增按鈕緊接在後 */}
                         <div className="flex items-center mb-2 gap-4">
                             <h3 className="font-medium text-gray-800 bg-gray-100 p-3 rounded-lg flex items-center gap-2">
                                 <span className="w-1.5 h-5 bg-green-500 rounded-full block"></span> 攜伴 ({formData.guests.length})
@@ -219,7 +250,6 @@
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="block text-xs font-medium text-gray-500 mb-1 ml-1">稱謂</label>
-                                    {/* 更新：修改選項 */}
                                     <select value={guest.relationship} onChange={(e) => handleGuestChange(index, 'relationship', e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg text-base bg-white focus:outline-none focus:border-indigo-400">
                                         <option value="配偶/伴侶">配偶/伴侶</option>
                                         <option value="父母">父母</option>
@@ -259,7 +289,6 @@
                 newGuests[index][field] = value;
                 setFormData({ ...formData, guests: newGuests });
             };
-            // 更新：新增攜伴時，預設稱謂改為 '配偶/伴侶'
             const addGuest = () => setFormData({ ...formData, guests: [...(formData.guests || []), { name: '', relationship: '配偶/伴侶', birthday: '', meal: '葷食' }] });
             const removeGuest = (index) => setFormData({ ...formData, guests: formData.guests.filter((_, i) => i !== index) });
 
@@ -290,7 +319,6 @@
                                         <div key={index} className="flex flex-col md:flex-row gap-2 md:items-center bg-gray-50 p-3 rounded border border-gray-100">
                                             <div className="flex-1 grid grid-cols-2 gap-2">
                                                 <input type="text" placeholder="姓名" value={guest.name} onChange={(e) => handleGuestChange(index, 'name', e.target.value)} className="w-full p-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-indigo-400" />
-                                                {/* 更新：修改選項 */}
                                                 <select value={guest.relationship} onChange={(e) => handleGuestChange(index, 'relationship', e.target.value)} className="w-full p-2 border border-gray-300 rounded text-sm"><option value="配偶/伴侶">配偶/伴侶</option><option value="父母">父母</option><option value="子女">子女</option></select>
                                             </div>
                                             <div className="flex-1 grid grid-cols-2 gap-2">
@@ -465,6 +493,7 @@
             const [registrations, setRegistrations] = useState([]);
             const [isSubmitting, setIsSubmitting] = useState(false);
             const [refreshKey, setRefreshKey] = useState(0);
+            const [showParkingInfo, setShowParkingInfo] = useState(false);
 
             // 讀取 Google Sheets 資料
             useEffect(() => {
@@ -520,12 +549,18 @@
                                 <div className="mt-4 md:mt-6 px-4">
                                     <h2 className="text-2xl md:text-3xl font-extrabold text-gray-800 text-center mb-4">桃園市結構工程技師公會</h2>
                                     <img src="Strawberry.jpg" alt="健行社 健行 採果 關西一日遊" className="w-full h-auto rounded-xl shadow-md mb-2 object-cover" />
-                                    <p className="text-center text-gray-500 text-sm md:text-base mb-1">本活動交通部分請會員自行安排，敬請見諒。</p>
-                                    <p className="text-center text-gray-500 text-sm md:text-base mb-4">報名截止日期為2026/01/25 23:59</p>
+                                    <div className="flex flex-col md:flex-row items-center justify-center gap-2 mb-2">
+                                        <p className="text-center text-gray-500 text-sm md:text-base">本活動交通部分請會員自行安排，敬請見諒。</p>
+                                        <button onClick={() => setShowParkingInfo(true)} className="text-xs bg-blue-600 text-white px-4 py-1.5 rounded-full hover:bg-blue-700 transition flex items-center gap-1 shadow-md animate-pulse-slow">
+                                            <Icons.MapPin className="w-3 h-3" /> 停車資訊
+                                        </button>
+                                    </div>
+                                    <p className="text-center text-gray-500 text-sm md:text-base mb-4">報名截止日期為2026/01/25 PM11:59</p>
                                 </div>
                                 <RegistrationForm onSubmit={handleSubmission} isSubmitting={isSubmitting} />
                             </>
                         )}
+                        {showParkingInfo && <ParkingModal onClose={() => setShowParkingInfo(false)} />}
                         {view === 'admin' && (!isAdminLoggedIn ? <AdminLogin onLogin={setIsAdminLoggedIn} /> : <AdminDashboard registrations={registrations} onLogout={() => setIsAdminLoggedIn(false)} onAction={handleAdminAction} />)}
                     </main>
                     <footer className="mt-12 py-6 text-center text-gray-400 text-sm bg-gray-100 border-t border-gray-200">&copy; 2026 桃園市結構工程技師公會 by 曉芬</footer>
