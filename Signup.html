@@ -501,12 +501,9 @@
                                         <h1 className="text-2xl md:text-4xl font-extrabold text-slate-800">2026 紐西蘭參訪暨高爾夫球聯誼活動</h1>
                                     </div>
                                     
-                                    {/* 紐西蘭情境圖片 */}
-                                    <div className="relative rounded-2xl overflow-hidden shadow-lg mb-6 group h-48 md:h-72 bg-slate-200">
-                                        <img src="NewZealand.jpg" alt="New Zealand" className="w-full h-full object-cover group-hover:scale-105 transition duration-700" />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
-                                            <p className="text-white p-4 text-sm md:text-base font-medium text-shadow">探索紐西蘭的壯麗風光，體驗頂級高爾夫球場</p>
-                                        </div>
+                                    {/* 紐西蘭情境圖片 (修改為一般圖片完整呈現) */}
+                                    <div className="rounded-2xl overflow-hidden shadow-lg mb-6">
+                                        <img src="NewZealand.jpg" alt="New Zealand" className="w-full h-auto block" />
                                     </div>
 
                                     {/* 活動資訊卡片 */}
@@ -522,7 +519,7 @@
                                         </ul>
                                     </div>
 
-                                    {/* 📖 行程表參考區塊 (新加入) */}
+                                    {/* 📖 行程表參考區塊 */}
                                     <div className="bg-white border border-slate-200 rounded-xl p-5 mb-6 shadow-sm">
                                         <div className="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
                                             <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
