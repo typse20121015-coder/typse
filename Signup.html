@@ -425,19 +425,19 @@
                 }
             });
 
-            // 更新：CSV 匯出格式同步扁平化
+            // 更新：CSV 匯出格式同步扁平化，並將意願字眼簡化為「參加」與「不參加」
             const exportToCSV = () => {
                 let csvContent = "\uFEFF填寫時間,身分,姓名,參加意願,參加高爾夫球,攜伴資料,對應會員\n";
                 registrations.forEach(reg => {
                     const date = new Date(reg.timestamp || Date.now()).toLocaleString();
-                    const intentStr = reg.intent || '未填寫';
-                    const mGolfStr = (intentStr !== '無法參加' && reg.memberJoinGolf) ? '⛳ 參與' : '';
+                    const intentStr = reg.intent === '有意願參加' ? '參加' : '不參加';
+                    const mGolfStr = (reg.intent !== '無法參加' && reg.memberJoinGolf) ? '⛳ 參與' : '';
                     
                     // 會員本人資料列
                     csvContent += `"${date}","會員本人","${reg.memberName}","${intentStr}","${mGolfStr}","-","-"\n`;
                     
                     // 攜伴資料列
-                    if (reg.guests && intentStr !== '無法參加') {
+                    if (reg.guests && reg.intent !== '無法參加') {
                         reg.guests.forEach(guest => {
                             const gGolfStr = guest.guestJoinGolf ? '⛳ 參與' : '';
                             csvContent += `"${date}","攜伴","${guest.name}","${intentStr}","${gGolfStr}","${guest.relationship||'親友'}","${reg.memberName}"\n`;
@@ -511,6 +511,7 @@
                                         <tr><td colSpan="6" className="text-center py-8 text-slate-400">目前無調查資料...</td></tr> :
                                         registrations.flatMap((reg, idx) => {
                                             const isNo = reg.intent === '無法參加';
+                                            const displayIntent = isNo ? '不參加' : '參加';
                                             
                                             // 會員本人的行 (Row)
                                             const memberRow = (
@@ -529,7 +530,7 @@
                                                     </td>
                                                     <td className="px-4 py-3 whitespace-nowrap">
                                                         <div className={`text-xs px-2 py-0.5 rounded-full inline-block font-medium ${isNo ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                                                            {reg.intent}
+                                                            {displayIntent}
                                                         </div>
                                                     </td>
                                                     <td className="px-4 py-3 whitespace-nowrap">
@@ -555,7 +556,7 @@
                                                     </td>
                                                     <td className="px-4 py-3 whitespace-nowrap">
                                                         <div className="text-xs px-2 py-0.5 rounded-full inline-block font-medium bg-emerald-100/50 text-emerald-700/70">
-                                                            {reg.intent}
+                                                            {displayIntent}
                                                         </div>
                                                     </td>
                                                     <td className="px-4 py-3 whitespace-nowrap">
