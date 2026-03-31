@@ -16,11 +16,8 @@
     <style>
         .fade-in { animation: fadeIn 0.3s ease-in; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        /* 自定義按鈕樣式，確保跨瀏覽器一致性 */
         .btn-icon { display: flex; align-items: center; justify-content: center; }
-        /* 自定義 Checkbox 放大 */
         .custom-checkbox { width: 1.25rem; height: 1.25rem; }
-        /* 隱藏捲軸但保留捲動功能 (橫向縮圖用) */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -34,54 +31,40 @@
         //  設定區域
         // ==========================================
         
-        // ★★★ 1. 請將下方的引號內容替換成您部署後的「Google Apps Script 網址」 ★★★
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFUqbvwnrNgR2n8Bwznkp_NglyDZUSF8z6UOAr6N64gLMvt49OR75qXNU-d2qpc9de/exec";
+        // ★★★ 1. Google Apps Script 網址 (已更新為最新 ID) ★★★
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby-gsYXclOvrjzfOSTan4CXqvli8vYxEZwZdk4jHlV3OzvbqVvLZRVYrV16DxC4dNve/exec";
         
         // ★★★ 2. 圖片與 PDF 網址設定 ★★★
-        // 已設定為讀取同資料夾下的 01.jpg ~ 05.jpg 以及 01.pdf
-        const ITINERARY_IMAGES = [
-            "01.jpg",
-            "02.jpg",
-            "03.jpg",
-            "04.jpg",
-            "05.jpg"
-        ];
+        const ITINERARY_IMAGES = ["01.jpg", "02.jpg", "03.jpg", "04.jpg", "05.jpg"];
         const ITINERARY_PDF_URL = "01.pdf";
         
         // ==========================================
 
         const { useState, useEffect } = React;
 
-        // --- 圖示元件 ---
-        const IconBase = ({ children, className, ...props }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`flex-shrink-0 ${className || 'w-5 h-5'}`} {...props}>
-                {children}
-            </svg>
-        );
-
         const Icons = {
-            Users: (props) => <IconBase {...props}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></IconBase>,
-            UserPlus: (props) => <IconBase {...props}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></IconBase>,
-            Lock: (props) => <IconBase {...props}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></IconBase>,
-            Plus: (props) => <IconBase {...props}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></IconBase>,
-            Trash2: (props) => <IconBase {...props}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></IconBase>,
-            Send: (props) => <IconBase {...props}><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></IconBase>,
-            CheckCircle: (props) => <IconBase {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></IconBase>,
-            Download: (props) => <IconBase {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></IconBase>,
-            LogOut: (props) => <IconBase {...props}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></IconBase>,
-            Edit: (props) => <IconBase {...props}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></IconBase>,
-            Globe: (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></IconBase>,
-            Navigation: (props) => <IconBase {...props}><polygon points="3 11 22 2 13 21 11 13 3 11"/></IconBase>,
-            FileText: (props) => <IconBase {...props}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></IconBase>,
-            X: (props) => <IconBase {...props}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></IconBase>,
-            Search: (props) => <IconBase {...props}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></IconBase>
+            Users: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+            UserPlus: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>,
+            Lock: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
+            Plus: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+            Trash2: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>,
+            Send: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
+            CheckCircle: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
+            Download: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+            LogOut: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+            Edit: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+            X: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+            Search: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+            Globe: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
+            Navigation: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>,
+            FileText: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
         };
 
         const Header = ({ setView, view }) => (
             <header className="bg-sky-800 text-white shadow-lg sticky top-0 z-40">
                 <div className="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
                     <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('form')}>
-                        <Icons.Globe className="w-6 h-6" />
+                        <Icons.Globe />
                         <h1 className="text-lg md:text-xl font-bold tracking-wider truncate">紐西蘭參訪意願調查</h1>
                     </div>
                     <nav className="flex gap-2">
@@ -96,43 +79,84 @@
             </header>
         );
 
-        // --- 全螢幕行程閱讀器元件 ---
         const ItineraryModal = ({ onClose }) => {
-            // 阻止背景滾動
-            useEffect(() => {
-                document.body.style.overflow = 'hidden';
-                return () => document.body.style.overflow = 'unset';
-            }, []);
-
+            useEffect(() => { document.body.style.overflow = 'hidden'; return () => document.body.style.overflow = 'unset'; }, []);
             return (
                 <div className="fixed inset-0 z-50 flex flex-col bg-slate-900/95 fade-in backdrop-blur-sm">
-                    {/* 頂部導覽列 */}
-                    <div className="flex justify-between items-center p-4 bg-slate-900 text-white shadow-md border-b border-slate-700">
-                        <h3 className="font-bold flex items-center gap-2 text-lg">
-                            <Icons.FileText className="w-5 h-5 text-sky-400" /> 行程表預覽
-                        </h3>
+                    <div className="flex justify-between items-center p-4 bg-slate-900 text-white border-b border-slate-700">
+                        <h3 className="font-bold flex items-center gap-2 text-lg"><Icons.FileText className="text-sky-400" /> 行程表預覽</h3>
                         <div className="flex items-center gap-4">
-                            <a href={ITINERARY_PDF_URL} target="_blank" className="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition shadow-sm">
-                                <Icons.Download className="w-4 h-4" /> <span className="hidden md:inline">下載 PDF</span>
-                            </a>
-                            <button onClick={onClose} className="p-2 bg-slate-800 hover:bg-slate-700 rounded-full transition text-slate-300 hover:text-white">
-                                <Icons.X className="w-6 h-6" />
-                            </button>
+                            <a href={ITINERARY_PDF_URL} target="_blank" className="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"><Icons.Download className="w-4 h-4" /> 下載 PDF</a>
+                            <button onClick={onClose} className="p-2 bg-slate-800 rounded-full text-slate-300"><Icons.X className="w-6 h-6" /></button>
                         </div>
                     </div>
-                    
-                    {/* 垂直捲動閱讀區 */}
                     <div className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col items-center gap-6">
-                        <div className="text-slate-400 text-sm mb-2 text-center">向下滑動以閱讀完整 5 頁行程 👇</div>
                         {ITINERARY_IMAGES.map((src, i) => (
-                            <div key={i} className="relative w-full max-w-3xl group">
-                                <div className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded-md backdrop-blur-sm">第 {i + 1} 頁</div>
-                                <img src={src} alt={`行程表第 ${i+1} 頁`} className="w-full bg-white rounded-xl shadow-2xl object-contain min-h-[300px]" />
+                            <div key={i} className="relative w-full max-w-3xl">
+                                <div className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">第 {i + 1} 頁</div>
+                                <img src={src} className="w-full bg-white rounded-xl shadow-2xl object-contain min-h-[300px]" />
                             </div>
                         ))}
-                        <div className="text-slate-400 py-6 text-sm flex flex-col items-center gap-2">
-                            <span>-- 已經到底部囉 --</span>
-                            <button onClick={onClose} className="mt-2 text-sky-400 underline hover:text-sky-300">關閉視窗，返回填寫表單</button>
+                    </div>
+                </div>
+            );
+        };
+
+        const EditModal = ({ data, onClose, onSave }) => {
+            const [formData, setFormData] = useState(JSON.parse(JSON.stringify(data)));
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+                        <div className="flex justify-between items-center p-4 border-b bg-slate-50">
+                            <h3 className="font-bold text-lg flex items-center gap-2 text-slate-800"><Icons.Edit className="text-sky-600" /> 編輯會員資料</h3>
+                            <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><Icons.X className="w-6 h-6" /></button>
+                        </div>
+                        <div className="p-4 md:p-6 overflow-y-auto flex-1">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-500 mb-1">會員姓名</label>
+                                    <input type="text" value={formData.memberName} onChange={(e) => setFormData({...formData, memberName: e.target.value})} className="w-full p-2.5 border rounded-lg" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-500 mb-1">參加意願</label>
+                                    <select value={formData.intent} onChange={(e) => setFormData({...formData, intent: e.target.value})} className="w-full p-2.5 border rounded-lg bg-white">
+                                       <option value="有意願參加">✅ 有意願參加</option>
+                                       <option value="無法參加">❌ 無法參加</option>
+                                    </select>
+                                </div>
+                                {formData.intent !== '無法參加' && (
+                                    <label className="md:col-span-2 flex items-center gap-3 p-3 border rounded-lg cursor-pointer bg-slate-50">
+                                        <input type="checkbox" checked={formData.memberJoinGolf} onChange={(e) => setFormData({...formData, memberJoinGolf: e.target.checked})} className="custom-checkbox rounded text-emerald-600" />
+                                        <span className="font-medium text-slate-700">⛳ 會員本人參加高爾夫球</span>
+                                    </label>
+                                )}
+                            </div>
+                            {formData.intent !== '無法參加' && (
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-4">
+                                        <h4 className="font-medium text-slate-800 border-l-4 border-emerald-500 pl-2">攜伴資料 ({formData.guests.length})</h4>
+                                        <button type="button" onClick={() => setFormData({...formData, guests: [...formData.guests, { name: '', relationship: '配偶/伴侶', guestJoinGolf: false }]})} className="text-xs bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg flex items-center gap-1 font-medium"><Icons.Plus className="w-4 h-4" /> 新增攜伴</button>
+                                    </div>
+                                    {formData.guests.map((g, i) => (
+                                        <div key={i} className="grid grid-cols-1 md:grid-cols-12 gap-3 p-4 border rounded-lg bg-slate-50 relative">
+                                            <input type="text" value={g.name} onChange={(e) => { const newG = [...formData.guests]; newG[i].name = e.target.value; setFormData({...formData, guests: newG}); }} className="md:col-span-4 p-2 border rounded-lg text-sm" placeholder="姓名" />
+                                            <select value={g.relationship} onChange={(e) => { const newG = [...formData.guests]; newG[i].relationship = e.target.value; setFormData({...formData, guests: newG}); }} className="md:col-span-3 p-2 border rounded-lg text-sm bg-white">
+                                                <option value="配偶/伴侶">配偶/伴侶</option><option value="父母">父母</option><option value="子女">子女</option><option value="親友">親友</option>
+                                            </select>
+                                            <label className="md:col-span-4 flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={g.guestJoinGolf} onChange={(e) => { const newG = [...formData.guests]; newG[i].guestJoinGolf = e.target.checked; setFormData({...formData, guests: newG}); }} className="rounded text-emerald-600" /><span className="text-sm font-medium">⛳ 參加打球</span></label>
+                                            <button type="button" onClick={() => { const newG = formData.guests.filter((_, idx) => idx !== i); setFormData({...formData, guests: newG}); }} className="md:col-span-1 text-red-500 flex justify-end"><Icons.Trash2 /></button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        <div className="p-4 border-t bg-slate-50 flex justify-end gap-3">
+                            <button onClick={onClose} className="px-4 py-2 bg-white border rounded-lg">取消</button>
+                            <button onClick={() => { 
+                                if (!formData.memberName.trim()) return alert("請輸入姓名");
+                                if (formData.intent === '無法參加') { formData.memberJoinGolf = false; formData.guests = []; }
+                                onSave(formData); 
+                            }} className="px-4 py-2 bg-sky-600 text-white rounded-lg flex items-center gap-2"><Icons.Send className="w-4 h-4" /> 儲存變更</button>
                         </div>
                     </div>
                 </div>
@@ -140,443 +164,155 @@
         };
 
         const RegistrationForm = ({ onSubmit, isSubmitting }) => {
-            const [formData, setFormData] = useState({ 
-                memberName: '', 
-                intent: '有意願參加',
-                memberJoinGolf: false, 
-                guests: [] 
-            });
+            const [formData, setFormData] = useState({ memberName: '', intent: '有意願參加', memberJoinGolf: false, guests: [] });
             const [showSuccess, setShowSuccess] = useState(false);
-
-            const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-            const handleMemberGolfToggle = (e) => setFormData({ ...formData, memberJoinGolf: e.target.checked });
-            const addGuest = () => setFormData({ ...formData, guests: [...formData.guests, { name: '', relationship: '配偶/伴侶', guestJoinGolf: false }] });
-            const removeGuest = (index) => setFormData({ ...formData, guests: formData.guests.filter((_, i) => i !== index) });
-            const handleGuestChange = (index, field, value) => {
-                const newGuests = [...formData.guests];
-                newGuests[index][field] = value;
-                setFormData({ ...formData, guests: newGuests });
-            };
-
             const handleSubmit = async (e) => {
                 e.preventDefault();
-                if (!formData.memberName || formData.memberName.trim() === '') return alert("請輸入會員姓名");
-                if (formData.intent !== '無法參加') {
-                    for (const guest of formData.guests) {
-                        if (!guest.name || guest.name.trim() === '') return alert("請輸入攜伴姓名");
-                    }
-                } else {
-                    formData.memberJoinGolf = false;
-                    formData.guests = [];
-                }
-                const success = await onSubmit(formData);
-                if (success) setShowSuccess(true);
+                if (!formData.memberName.trim()) return alert("請輸入姓名");
+                if (formData.intent !== '無法參加') { for (const g of formData.guests) { if (!g.name.trim()) return alert("請輸入攜伴姓名"); } }
+                else { formData.memberJoinGolf = false; formData.guests = []; }
+                const success = await onSubmit(formData); if (success) setShowSuccess(true);
             };
-
             if (showSuccess) return (
                 <div className="flex flex-col items-center justify-center p-8 bg-white rounded-xl shadow-lg mt-6 text-center animate-fade-in mx-4">
                     <Icons.CheckCircle className="w-20 h-20 text-emerald-500 mb-4" />
                     <h2 className="text-2xl font-bold text-slate-800 mb-2">問卷送出成功！</h2>
-                    <p className="text-slate-600 mb-6">感謝您的回覆，您的意願資料已成功傳送。</p>
-                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 text-sm text-slate-500 w-full">
-                        待統計人數並確認旅行社報價後，公會將盡快公佈詳細行程與正式報名資訊。
-                    </div>
+                    <p className="text-slate-600">感謝您的回覆，調查資料已傳送。</p>
                 </div>
             );
-
             return (
                 <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-4 md:p-8 mt-4 md:mt-0 mx-2 md:mx-0">
-                    <h2 className="text-xl font-bold text-slate-800 mb-6 border-b pb-3 flex items-center gap-2">
-                        <Icons.UserPlus className="text-sky-600 w-6 h-6" /> 填寫參加意願
-                    </h2>
-                    
+                    <h2 className="text-xl font-bold text-slate-800 mb-6 border-b pb-3 flex items-center gap-2"><Icons.UserPlus className="text-sky-600" /> 填寫參加意願</h2>
                     <div className="space-y-4 mb-8">
-                        <h3 className="font-medium text-slate-800 bg-slate-100 p-3 rounded-lg flex items-center gap-2">
-                           <span className="w-1.5 h-5 bg-sky-500 rounded-full block"></span> 會員基本資訊
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 p-4 md:p-5 border border-slate-200 rounded-xl relative bg-slate-50 hover:bg-white hover:shadow-md transition-all">
-                            <div className="md:col-span-3">
-                                <label className="block text-xs font-medium text-slate-500 mb-1 ml-1">會員姓名 *</label>
-                                <input required type="text" name="memberName" value={formData.memberName} onChange={handleChange} placeholder="請輸入姓名" className="w-full p-3 border border-slate-300 rounded-lg text-base focus:ring-2 focus:ring-sky-500 focus:outline-none" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border border-slate-200 rounded-xl bg-slate-50">
+                            <div>
+                                <label className="block text-xs font-medium text-slate-500 mb-1">會員姓名 *</label>
+                                <input required type="text" value={formData.memberName} onChange={(e) => setFormData({...formData, memberName: e.target.value})} className="w-full p-3 border rounded-lg" placeholder="姓名" />
                             </div>
-                            <div className="md:col-span-3">
-                                <label className="block text-xs font-medium text-slate-500 mb-1 ml-1">參加意願 *</label>
-                                <select name="intent" value={formData.intent} onChange={handleChange} className="w-full p-3 border border-slate-300 rounded-lg text-base bg-white focus:outline-none focus:border-sky-400 font-medium text-sky-800">
-                                   <option value="有意願參加">✅ 有意願參加</option>
-                                   <option value="無法參加">❌ 無法參加</option>
+                            <div>
+                                <label className="block text-xs font-medium text-slate-500 mb-1">參加意願 *</label>
+                                <select value={formData.intent} onChange={(e) => setFormData({...formData, intent: e.target.value})} className="w-full p-3 border rounded-lg bg-white font-medium text-sky-800">
+                                   <option value="有意願參加">✅ 有意願參加</option><option value="無法參加">❌ 無法參加</option>
                                 </select>
                             </div>
-
                             {formData.intent !== '無法參加' && (
-                                <div className="md:col-span-6 mt-2 border-t pt-4 border-slate-200">
-                                    <label className="block text-xs font-medium text-slate-500 mb-2 ml-1">行程選擇 (會員本人) *</label>
-                                    <div className="flex flex-col gap-3">
-                                        <div className="flex items-center gap-2 text-slate-700 bg-white border border-slate-300 p-3 rounded-lg shadow-sm">
-                                            <Icons.Navigation className="w-5 h-5 text-sky-600" />
-                                            <span className="font-medium">基本行程：紐西蘭參訪行程</span>
-                                        </div>
-                                        <label className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition shadow-sm ${formData.memberJoinGolf ? 'border-emerald-400 bg-emerald-50' : 'border-slate-300 bg-white hover:bg-slate-50'}`}>
-                                            <input type="checkbox" checked={formData.memberJoinGolf} onChange={handleMemberGolfToggle} className="custom-checkbox text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" />
-                                            <span className={`font-medium ${formData.memberJoinGolf ? 'text-emerald-800' : 'text-slate-700'}`}>
-                                                ⛳ 我要額外參加高爾夫球活動
-                                            </span>
-                                        </label>
-                                    </div>
+                                <div className="md:col-span-2 mt-2 border-t pt-4">
+                                    <label className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition ${formData.memberJoinGolf ? 'border-emerald-400 bg-emerald-50' : 'bg-white border-slate-300'}`}>
+                                        <input type="checkbox" checked={formData.memberJoinGolf} onChange={(e) => setFormData({...formData, memberJoinGolf: e.target.checked})} className="custom-checkbox text-emerald-600" />
+                                        <span className="font-medium text-slate-700">⛳ 我要額外參加高爾夫球活動</span>
+                                    </label>
                                 </div>
                             )}
                         </div>
                     </div>
-
                     {formData.intent !== '無法參加' && (
                         <div className="space-y-4 mb-8 fade-in">
-                            <div className="flex items-center mb-2 gap-4">
-                                <h3 className="font-medium text-slate-800 bg-slate-100 p-3 rounded-lg flex items-center gap-2">
-                                    <span className="w-1.5 h-5 bg-emerald-500 rounded-full block"></span> 預計攜伴人數 ({formData.guests.length})
-                                </h3>
-                                <button type="button" onClick={addGuest} className="btn-icon text-sm bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-lg gap-2 transition shadow-sm whitespace-nowrap active:scale-95">
-                                    <Icons.Plus className="w-5 h-5" /> 新增攜伴
-                                </button>
+                            <div className="flex items-center gap-4">
+                                <h3 className="font-medium text-slate-800 bg-slate-100 p-3 rounded-lg flex items-center gap-2">攜伴人數 ({formData.guests.length})</h3>
+                                <button type="button" onClick={() => setFormData({...formData, guests: [...formData.guests, { name: '', relationship: '配偶/伴侶', guestJoinGolf: false }]})} className="bg-emerald-500 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Icons.Plus className="w-5 h-5" /> 新增攜伴</button>
                             </div>
-                            
-                            {formData.guests.length === 0 && (
-                                <p className="text-sm text-slate-400 italic text-center py-8 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">若有親友同行，請點擊上方「新增攜伴」</p>
-                            )}
-                            
-                            {formData.guests.map((guest, index) => (
-                                <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 md:p-5 border border-slate-200 rounded-xl relative bg-slate-50 hover:bg-white hover:shadow-md transition-all fade-in items-start">
-                                    <div className="md:col-span-4">
-                                        <label className="block text-xs font-medium text-slate-500 mb-1 ml-1">攜伴 {index + 1} 姓名</label>
-                                        <input required type="text" value={guest.name} onChange={(e) => handleGuestChange(index, 'name', e.target.value)} placeholder="攜伴姓名" className="w-full p-3 border border-slate-300 rounded-lg text-base focus:outline-none focus:border-sky-400" />
-                                    </div>
-                                    <div className="md:col-span-3">
-                                        <label className="block text-xs font-medium text-slate-500 mb-1 ml-1">與會員關係</label>
-                                        <select value={guest.relationship} onChange={(e) => handleGuestChange(index, 'relationship', e.target.value)} className="w-full p-3 border border-slate-300 rounded-lg text-base bg-white focus:outline-none focus:border-sky-400">
-                                            <option value="配偶/伴侶">配偶/伴侶</option>
-                                            <option value="父母">父母</option>
-                                            <option value="子女">子女</option>
-                                            <option value="親友">其他親友</option>
-                                        </select>
-                                    </div>
-                                    <div className="md:col-span-3 pt-6">
-                                        <label className="flex items-center gap-2 p-2.5 border border-slate-300 bg-white rounded-lg cursor-pointer hover:bg-emerald-50 hover:border-emerald-300 transition">
-                                            <input type="checkbox" checked={guest.guestJoinGolf} onChange={(e) => handleGuestChange(index, 'guestJoinGolf', e.target.checked)} className="custom-checkbox text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" />
-                                            <span className="text-sm font-medium text-slate-700">⛳ 參加高爾夫球</span>
-                                        </label>
-                                    </div>
-                                    <div className="md:col-span-2 flex items-center justify-end md:justify-center pt-6">
-                                        <button type="button" onClick={() => removeGuest(index)} className="btn-icon text-red-500 hover:text-red-700 p-2.5 bg-white border border-slate-200 hover:border-red-200 rounded-lg transition gap-2 w-full md:w-auto">
-                                            <Icons.Trash2 className="w-5 h-5" /> <span className="md:hidden text-sm font-medium">刪除此位</span>
-                                        </button>
-                                    </div>
+                            {formData.guests.map((g, i) => (
+                                <div key={i} className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 border rounded-xl bg-slate-50 items-center">
+                                    <input required type="text" value={g.name} onChange={(e) => { const newG = [...formData.guests]; newG[i].name = e.target.value; setFormData({...formData, guests: newG}); }} className="md:col-span-4 p-3 border rounded-lg" placeholder="姓名" />
+                                    <select value={g.relationship} onChange={(e) => { const newG = [...formData.guests]; newG[i].relationship = e.target.value; setFormData({...formData, guests: newG}); }} className="md:col-span-3 p-3 border rounded-lg bg-white">
+                                        <option value="配偶/伴侶">配偶/伴侶</option><option value="父母">父母</option><option value="子女">子女</option><option value="親友">親友</option>
+                                    </select>
+                                    <label className="md:col-span-3 flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={g.guestJoinGolf} onChange={(e) => { const newG = [...formData.guests]; newG[i].guestJoinGolf = e.target.checked; setFormData({...formData, guests: newG}); }} className="custom-checkbox text-emerald-600" /><span className="text-sm font-medium">⛳ 參加打球</span></label>
+                                    <button type="button" onClick={() => { const newG = formData.guests.filter((_, idx) => idx !== i); setFormData({...formData, guests: newG}); }} className="md:col-span-2 text-red-500 flex justify-end"><Icons.Trash2 /></button>
                                 </div>
                             ))}
                         </div>
                     )}
-
-                    <button type="submit" disabled={isSubmitting} className={`btn-icon w-full py-4 px-6 rounded-xl font-bold text-lg text-white shadow-lg transition transform hover:-translate-y-0.5 active:translate-y-0 gap-2 ${isSubmitting ? 'bg-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800'}`}>
-                        {isSubmitting ? '資料傳送中...' : <><Icons.Send className="w-6 h-6" /> 送出意願表</>}
+                    <button type="submit" disabled={isSubmitting} className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-lg flex justify-center items-center gap-2 ${isSubmitting ? 'bg-slate-400' : 'bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700'}`}>
+                        {isSubmitting ? '傳送中...' : <><Icons.Send className="w-6 h-6" /> 送出意願表</>}
                     </button>
                 </form>
             );
         };
 
-        const AdminLogin = ({ onLogin }) => {
-            const [password, setPassword] = useState('');
-            const [error, setError] = useState(false);
-            const handleSubmit = (e) => {
-                e.preventDefault();
-                if (password === 'admin888') onLogin(true);
-                else setError(true);
-            };
-            return (
-                <div className="max-w-md mx-auto mt-10 bg-white p-8 rounded-xl shadow-lg border-t-4 border-sky-600 mx-4">
-                    <div className="text-center mb-6">
-                        <div className="bg-sky-50 p-3 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 text-sky-600"><Icons.Lock className="w-8 h-8" /></div>
-                        <h2 className="text-xl font-bold text-slate-800">管理員登入</h2>
-                        <p className="text-sm text-slate-500 mt-2">請輸入後台管理密碼</p>
-                    </div>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <input type="password" placeholder="請輸入密碼" className="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none transition text-lg" value={password} onChange={(e) => { setPassword(e.target.value); setError(false); }} />
-                        {error && <p className="text-red-500 text-sm text-center">密碼錯誤，請重試。</p>}
-                        <button className="w-full bg-sky-600 text-white py-3 rounded-lg font-bold hover:bg-sky-700 transition shadow text-lg">登入後台</button>
-                    </form>
-                </div>
-            );
-        };
-
-        const EditModal = ({ data, onClose, onSave }) => {
-            const [formData, setFormData] = useState(JSON.parse(JSON.stringify(data)));
-            
-            return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
-                        <div className="flex justify-between items-center p-4 md:p-5 border-b border-slate-200 bg-slate-50">
-                            <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
-                                <Icons.Edit className="w-5 h-5 text-sky-600" /> 編輯會員資料
-                            </h3>
-                            <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600 transition p-1 rounded-full hover:bg-slate-200">
-                                <Icons.X className="w-6 h-6" />
-                            </button>
-                        </div>
-                        
-                        <div className="p-4 md:p-6 overflow-y-auto flex-1">
-                            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
-                                <div className="md:col-span-3">
-                                    <label className="block text-xs font-medium text-slate-500 mb-1 ml-1">會員姓名</label>
-                                    <input required type="text" name="memberName" value={formData.memberName} onChange={(e) => setFormData({...formData, memberName: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg text-base focus:outline-none focus:border-sky-400" />
-                                </div>
-                                <div className="md:col-span-3">
-                                    <label className="block text-xs font-medium text-slate-500 mb-1 ml-1">參加意願</label>
-                                    <select name="intent" value={formData.intent} onChange={(e) => setFormData({...formData, intent: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg text-base bg-white focus:outline-none focus:border-sky-400">
-                                       <option value="有意願參加">✅ 有意願參加</option>
-                                       <option value="無法參加">❌ 無法參加</option>
-                                    </select>
-                                </div>
-                                {formData.intent !== '無法參加' && (
-                                    <div className="md:col-span-6 mt-2">
-                                        <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition shadow-sm border-slate-300 bg-white hover:bg-slate-50">
-                                            <input type="checkbox" checked={formData.memberJoinGolf} onChange={(e) => setFormData({...formData, memberJoinGolf: e.target.checked})} className="custom-checkbox text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" />
-                                            <span className="font-medium text-slate-700">⛳ 會員本人參加高爾夫球</span>
-                                        </label>
-                                    </div>
-                                )}
-                            </div>
-
-                            {formData.intent !== '無法參加' && (
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-4">
-                                        <h4 className="font-medium text-slate-800 border-l-4 border-emerald-500 pl-2">攜伴資料 ({formData.guests.length})</h4>
-                                        <button type="button" onClick={() => setFormData({...formData, guests: [...formData.guests, { name: '', relationship: '配偶/伴侶', guestJoinGolf: false }]})} className="text-xs bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-3 py-1.5 rounded-lg flex items-center gap-1 transition font-medium">
-                                            <Icons.Plus className="w-4 h-4" /> 新增攜伴
-                                        </button>
-                                    </div>
-                                    {formData.guests.map((guest, index) => (
-                                        <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-3 p-4 border border-slate-200 rounded-lg bg-slate-50 relative">
-                                            <div className="md:col-span-4">
-                                                <input type="text" value={guest.name} onChange={(e) => {
-                                                    const newG = [...formData.guests]; newG[index].name = e.target.value; setFormData({...formData, guests: newG});
-                                                }} placeholder="攜伴姓名" className="w-full p-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-sky-400" />
-                                            </div>
-                                            <div className="md:col-span-3">
-                                                <select value={guest.relationship} onChange={(e) => {
-                                                    const newG = [...formData.guests]; newG[index].relationship = e.target.value; setFormData({...formData, guests: newG});
-                                                }} className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:border-sky-400">
-                                                    <option value="配偶/伴侶">配偶/伴侶</option>
-                                                    <option value="父母">父母</option>
-                                                    <option value="子女">子女</option>
-                                                    <option value="親友">其他親友</option>
-                                                </select>
-                                            </div>
-                                            <div className="md:col-span-4 flex items-center">
-                                                <label className="flex items-center gap-2 cursor-pointer">
-                                                    <input type="checkbox" checked={guest.guestJoinGolf} onChange={(e) => {
-                                                        const newG = [...formData.guests]; newG[index].guestJoinGolf = e.target.checked; setFormData({...formData, guests: newG});
-                                                    }} className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
-                                                    <span className="text-sm font-medium text-slate-700">⛳ 參加</span>
-                                                </label>
-                                            </div>
-                                            <div className="md:col-span-1 flex justify-end items-center">
-                                                <button type="button" onClick={() => {
-                                                    const newG = formData.guests.filter((_, i) => i !== index); setFormData({...formData, guests: newG});
-                                                }} className="text-red-500 hover:bg-red-100 p-1.5 rounded transition"><Icons.Trash2 className="w-5 h-5" /></button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                        
-                        <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
-                            <button type="button" onClick={onClose} className="px-4 py-2 text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-100 transition font-medium">取消</button>
-                            <button type="button" onClick={(e) => {
-                                e.preventDefault();
-                                if (!formData.memberName || formData.memberName.trim() === '') return alert("請輸入會員姓名");
-                                if (formData.intent !== '無法參加') {
-                                    for (const guest of formData.guests) {
-                                        if (!guest.name || guest.name.trim() === '') return alert("請輸入攜伴姓名");
-                                    }
-                                } else {
-                                    formData.memberJoinGolf = false;
-                                    formData.guests = [];
-                                }
-                                onSave(formData);
-                            }} className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition font-medium shadow-sm flex items-center gap-2">
-                                <Icons.Send className="w-4 h-4" /> 儲存變更
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
         const AdminDashboard = ({ registrations, onLogout, onAction }) => {
             const [editingDoc, setEditingDoc] = useState(null);
-
             const interestedRegs = registrations.filter(r => r.intent !== '無法參加');
             const totalMembers = interestedRegs.length;
             const totalGuests = interestedRegs.reduce((acc, curr) => acc + (curr.guests?.length || 0), 0);
             const totalPeople = totalMembers + totalGuests;
-            
             let totalGolfers = 0;
-            interestedRegs.forEach(reg => {
-                if (reg.memberJoinGolf) totalGolfers++;
-                if (reg.guests) {
-                    reg.guests.forEach(g => { if (g.guestJoinGolf) totalGolfers++; });
-                }
-            });
+            interestedRegs.forEach(reg => { if (reg.memberJoinGolf) totalGolfers++; (reg.guests||[]).forEach(g => { if (g.guestJoinGolf) totalGolfers++; }); });
 
-            // 更新：CSV 匯出格式同步扁平化，並將意願字眼簡化為「參加」與「不參加」
             const exportToCSV = () => {
                 let csvContent = "\uFEFF填寫時間,身分,姓名,參加意願,參加高爾夫球,攜伴資料,對應會員\n";
                 registrations.forEach(reg => {
                     const date = new Date(reg.timestamp || Date.now()).toLocaleString();
                     const intentStr = reg.intent === '有意願參加' ? '參加' : '不參加';
                     const mGolfStr = (reg.intent !== '無法參加' && reg.memberJoinGolf) ? '⛳ 參與' : '';
-                    
-                    // 會員本人資料列
                     csvContent += `"${date}","會員本人","${reg.memberName}","${intentStr}","${mGolfStr}","-","-"\n`;
-                    
-                    // 攜伴資料列
-                    if (reg.guests && reg.intent !== '無法參加') {
-                        reg.guests.forEach(guest => {
-                            const gGolfStr = guest.guestJoinGolf ? '⛳ 參與' : '';
-                            csvContent += `"${date}","攜伴","${guest.name}","${intentStr}","${gGolfStr}","${guest.relationship||'親友'}","${reg.memberName}"\n`;
+                    if (reg.intent !== '無法參加' && reg.guests) {
+                        reg.guests.forEach(g => {
+                            const gGolfStr = g.guestJoinGolf ? '⛳ 參與' : '';
+                            csvContent += `"${date}","攜伴","${g.name}","${intentStr}","${gGolfStr}","${g.relationship}","${reg.memberName}"\n`;
                         });
                     }
                 });
-                
                 const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement("a");
-                link.href = URL.createObjectURL(blob);
-                link.download = `紐西蘭意願調查統計_${new Date().toISOString().slice(0,10)}.csv`;
+                const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `紐西蘭意願調查_${new Date().toISOString().slice(0,10)}.csv`;
                 document.body.appendChild(link); link.click(); document.body.removeChild(link);
             };
 
-            const handleDelete = (id, name) => {
-                // 提示文字更新，提醒刪除會員會連同攜伴一起刪除
-                if (confirm(`確定要刪除「${name}」及其攜伴的意願資料嗎？`)) {
-                    onAction('delete', { userId: id });
-                }
-            };
-
-            const handleUpdate = (updatedData) => {
-                onAction('update', updatedData);
-                setEditingDoc(null);
-            };
-
-            const adminBtnClass = "btn-icon flex-1 md:flex-none justify-center px-4 py-2.5 rounded-lg shadow-sm text-sm whitespace-nowrap gap-2 border transition";
-
             return (
-                <div className="mt-2 md:mt-6">
-                    <div className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200 mx-2 md:mx-0">
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                            <div>
-                                <h2 className="text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-2">
-                                    <Icons.Users className="w-6 h-6 text-sky-600" /> 調查結果統計
-                                </h2>
-                                <div className="flex flex-wrap gap-3 mt-3 text-sm text-slate-600 bg-slate-50 border border-slate-100 p-3 rounded-lg">
-                                    <span>有意願會員: <b>{totalMembers}</b> 人</span>
-                                    <span className="border-l border-slate-300 pl-3">攜伴: <b>{totalGuests}</b> 人</span>
-                                    <span className="border-l border-slate-300 pl-3">預計總人數: <b className="text-sky-700 text-lg">{totalPeople}</b> 人</span>
-                                    <span className="border-l border-slate-300 pl-3">參與高爾夫球: <b className="text-emerald-600 text-lg">{totalGolfers}</b> 人</span>
-                                </div>
-                            </div>
-                            <div className="flex flex-wrap gap-2 w-full md:w-auto">
-                                <button onClick={exportToCSV} className={`${adminBtnClass} bg-sky-600 hover:bg-sky-700 text-white border-sky-700`}>
-                                    <Icons.Download className="w-4 h-4" /> 匯出統計清單 (CSV)
-                                </button>
-                                <button onClick={onLogout} className={`${adminBtnClass} bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200`}>
-                                    <Icons.LogOut className="w-4 h-4" /> 登出
-                                </button>
+                <div className="mt-6">
+                    <div className="bg-white p-4 rounded-xl shadow-sm border mx-2 md:mx-0 flex flex-col md:flex-row justify-between gap-4">
+                        <div>
+                            <h2 className="text-xl font-bold flex items-center gap-2"><Icons.Users className="text-sky-600" /> 調查結果統計</h2>
+                            <div className="flex flex-wrap gap-3 mt-3 text-sm text-slate-600 bg-slate-50 p-3 rounded-lg border">
+                                <span>預計總人數: <b className="text-sky-700 text-lg">{totalPeople}</b> 人</span>
+                                <span className="border-l pl-3">參加高爾夫球: <b className="text-emerald-600 text-lg">{totalGolfers}</b> 人</span>
                             </div>
                         </div>
+                        <div className="flex gap-2">
+                            <button onClick={exportToCSV} className="bg-sky-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm shadow-sm"><Icons.Download className="w-4 h-4" /> 匯出 CSV</button>
+                            <button onClick={onLogout} className="bg-slate-100 text-slate-700 px-4 py-2 rounded-lg flex items-center gap-2 text-sm border hover:bg-slate-200"><Icons.LogOut className="w-4 h-4" /> 登出</button>
+                        </div>
                     </div>
-                    
-                    {/* 更新：扁平化的清單表格 */}
-                    <div className="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200 mt-4 mx-2 md:mx-0">
+                    <div className="bg-white rounded-xl shadow-md overflow-hidden border mt-4 mx-2 md:mx-0">
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-slate-200">
-                                <thead className="bg-slate-50">
-                                    <tr>
-                                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 whitespace-nowrap">操作</th>
-                                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 whitespace-nowrap">身分</th>
-                                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 whitespace-nowrap">姓名</th>
-                                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 whitespace-nowrap">參加意願</th>
-                                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 whitespace-nowrap">參加高爾夫球</th>
-                                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 whitespace-nowrap">攜伴資料</th>
-                                    </tr>
+                                <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                    <tr><th className="px-4 py-3 text-left">操作</th><th className="px-4 py-3 text-left">身分</th><th className="px-4 py-3 text-left">姓名</th><th className="px-4 py-3 text-left">參加意願</th><th className="px-4 py-3 text-left">高爾夫球</th><th className="px-4 py-3 text-left">攜伴資料</th></tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-slate-200">
-                                    {registrations.length === 0 ? 
-                                        <tr><td colSpan="6" className="text-center py-8 text-slate-400">目前無調查資料...</td></tr> :
-                                        registrations.flatMap((reg, idx) => {
-                                            const isNo = reg.intent === '無法參加';
-                                            const displayIntent = isNo ? '不參加' : '參加';
-                                            
-                                            // 會員本人的行 (Row)
-                                            const memberRow = (
-                                                <tr key={reg.userId} className={`hover:bg-sky-50/30 ${isNo ? 'bg-slate-50 opacity-70' : ''} border-t-[3px] border-slate-100`}>
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        <div className="flex gap-2">
-                                                            <button onClick={() => setEditingDoc(reg)} title="編輯會員資料" className="btn-icon text-sky-600 p-2 bg-sky-50 rounded-lg hover:bg-sky-100"><Icons.Edit className="w-4 h-4" /></button>
-                                                            <button onClick={() => handleDelete(reg.userId, reg.memberName)} title="刪除此會員及攜伴" className="btn-icon text-red-500 p-2 bg-red-50 rounded-lg hover:bg-red-100"><Icons.Trash2 className="w-4 h-4" /></button>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        <span className="bg-sky-100 text-sky-800 text-xs px-2 py-1 rounded font-medium">會員本人</span>
-                                                    </td>
-                                                    <td className="px-4 py-3 whitespace-nowrap font-bold text-slate-800">
-                                                        {reg.memberName}
-                                                    </td>
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        <div className={`text-xs px-2 py-0.5 rounded-full inline-block font-medium ${isNo ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                                                            {displayIntent}
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        {!isNo && reg.memberJoinGolf ? <span className="text-emerald-600 font-medium text-sm">⛳ 參與</span> : ''}
-                                                    </td>
-                                                    <td className="px-4 py-3 whitespace-nowrap text-slate-400 text-sm">
-                                                        -
-                                                    </td>
-                                                </tr>
-                                            );
-
-                                            // 攜伴的行 (Row) - 針對該會員的每位攜伴獨立生成一列
-                                            const guestRows = (!isNo && reg.guests) ? reg.guests.map((g, i) => (
-                                                <tr key={`${reg.userId}-guest-${i}`} className="hover:bg-sky-50/30 bg-slate-50/50">
-                                                    <td className="px-4 py-3 whitespace-nowrap border-l-4 border-sky-300">
-                                                        {/* 攜伴列不顯示刪除按鈕，由會員主列統一刪除 */}
-                                                    </td>
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        <span className="bg-slate-200 text-slate-600 text-xs px-2 py-1 rounded font-medium">攜伴</span>
-                                                    </td>
-                                                    <td className="px-4 py-3 whitespace-nowrap font-medium text-slate-700">
-                                                        {g.name}
-                                                    </td>
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        <div className="text-xs px-2 py-0.5 rounded-full inline-block font-medium bg-emerald-100/50 text-emerald-700/70">
-                                                            {displayIntent}
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        {g.guestJoinGolf ? <span className="text-emerald-600 font-medium text-sm">⛳ 參與</span> : ''}
-                                                    </td>
-                                                    <td className="px-4 py-3 whitespace-nowrap text-slate-600 text-sm">
-                                                        {g.relationship}
-                                                    </td>
-                                                </tr>
-                                            )) : [];
-
-                                            // 將會員與其攜伴合併成一個連續的陣列回傳給表格
-                                            return [memberRow, ...guestRows];
-                                        })
-                                    }
+                                    {registrations.flatMap((reg) => {
+                                        const isNo = reg.intent === '無法參加';
+                                        const displayIntent = isNo ? '不參加' : '參加';
+                                        const memberRow = (
+                                            <tr key={reg.userId} className={`hover:bg-sky-50/30 ${isNo ? 'opacity-70 bg-slate-50' : ''} border-t-2 border-slate-100`}>
+                                                <td className="px-4 py-3 flex gap-2">
+                                                    <button onClick={() => setEditingDoc(reg)} className="p-2 bg-sky-50 text-sky-600 rounded-lg hover:bg-sky-100"><Icons.Edit className="w-4 h-4" /></button>
+                                                    <button onClick={() => { if(confirm(`確定刪除 ${reg.memberName}？`)) onAction('delete', {userId: reg.userId}); }} className="p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100"><Icons.Trash2 className="w-4 h-4" /></button>
+                                                </td>
+                                                <td className="px-4 py-3 whitespace-nowrap"><span className="bg-sky-100 text-sky-800 text-xs px-2 py-1 rounded">會員本人</span></td>
+                                                <td className="px-4 py-3 whitespace-nowrap font-bold text-slate-800">{reg.memberName}</td>
+                                                <td className="px-4 py-3 whitespace-nowrap"><span className={`text-xs px-2 py-0.5 rounded-full ${isNo ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>{displayIntent}</span></td>
+                                                <td className="px-4 py-3 text-emerald-600 font-bold">{!isNo && reg.memberJoinGolf ? '⛳ 參與' : ''}</td>
+                                                <td className="px-4 py-3 text-slate-400 text-sm">-</td>
+                                            </tr>
+                                        );
+                                        const guestRows = (!isNo && reg.guests) ? reg.guests.map((g, i) => (
+                                            <tr key={`${reg.userId}-g-${i}`} className="hover:bg-sky-50/30 bg-slate-50/50">
+                                                <td className="px-4 py-3 border-l-4 border-sky-300"></td>
+                                                <td className="px-4 py-3 whitespace-nowrap"><span className="bg-slate-200 text-slate-600 text-xs px-2 py-1 rounded">攜伴</span></td>
+                                                <td className="px-4 py-3 whitespace-nowrap text-slate-700">{g.name}</td>
+                                                <td className="px-4 py-3 whitespace-nowrap"><span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600/70">參加</span></td>
+                                                <td className="px-4 py-3 text-emerald-600 font-bold">{g.guestJoinGolf ? '⛳ 參與' : ''}</td>
+                                                <td className="px-4 py-3 text-slate-600 text-sm">{g.relationship}</td>
+                                            </tr>
+                                        )) : [];
+                                        return [memberRow, ...guestRows];
+                                    })}
                                 </tbody>
                             </table>
                         </div>
                     </div>
-                    {editingDoc && <EditModal data={editingDoc} onClose={() => setEditingDoc(null)} onSave={handleUpdate} />}
+                    {editingDoc && <EditModal data={editingDoc} onClose={() => setEditingDoc(null)} onSave={(d) => { onAction('update', d); setEditingDoc(null); }} />}
                 </div>
             );
         };
@@ -587,148 +323,70 @@
             const [registrations, setRegistrations] = useState([]);
             const [isSubmitting, setIsSubmitting] = useState(false);
             const [refreshKey, setRefreshKey] = useState(0);
-            
-            // 新增：控制行程表閱讀器 Modal 的狀態
             const [showItineraryModal, setShowItineraryModal] = useState(false);
 
             useEffect(() => {
                 if (view === 'admin' && isAdminLoggedIn) {
-                    if(GOOGLE_SCRIPT_URL.includes("請將下方的引號內容替換")) return;
-                    fetch(GOOGLE_SCRIPT_URL)
-                        .then(res => res.json())
-                        .then(data => setRegistrations(data.reverse()))
-                        .catch(err => console.error("Error fetching data:", err));
+                    fetch(GOOGLE_SCRIPT_URL).then(res => res.json()).then(data => setRegistrations(data.reverse())).catch(err => console.error(err));
                 }
             }, [view, isAdminLoggedIn, refreshKey]);
 
-            const handleSubmission = async (formData) => {
-                return await sendToGAS({ ...formData, action: 'add', userId: 'user_' + Date.now() + Math.random().toString(36).substr(2, 9), timestamp: new Date().toISOString() });
+            const sendToGAS = async (payload) => {
+                setIsSubmitting(true);
+                try {
+                    await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), headers: { "Content-Type": "text/plain;charset=utf-8" } });
+                    setIsSubmitting(false); return true;
+                } catch (e) { alert("失敗"); setIsSubmitting(false); return false; }
             };
 
             const handleAdminAction = async (action, data) => {
                 const success = await sendToGAS({ ...data, action: action });
-                if (success) {
-                    alert('資料已更新');
-                    setRefreshKey(prev => prev + 1);
-                }
-            };
-
-            const sendToGAS = async (payload) => {
-                if(GOOGLE_SCRIPT_URL.includes("請將下方的引號內容替換")) {
-                    alert("提示：目前未設定 Google Apps Script 後端網址，前端已模擬送出成功！\n(請至程式碼中修改 GOOGLE_SCRIPT_URL)");
-                    setIsSubmitting(true);
-                    setTimeout(() => setIsSubmitting(false), 800);
-                    return true;
-                }
-                setIsSubmitting(true);
-                try {
-                    await fetch(GOOGLE_SCRIPT_URL, {
-                        method: 'POST',
-                        body: JSON.stringify(payload),
-                        headers: { "Content-Type": "text/plain;charset=utf-8" },
-                    });
-                    setIsSubmitting(false); return true;
-                } catch (e) { 
-                    console.error(e); 
-                    alert("連線失敗，請檢查網路"); 
-                    setIsSubmitting(false); return false; 
-                }
+                if (success) { setRefreshKey(prev => prev + 1); }
             };
 
             return (
-                <div className="flex-grow flex flex-col relative">
+                <div className="flex-grow flex flex-col">
                     <Header setView={setView} view={view} />
-                    
-                    {/* 行程表閱讀器全螢幕彈窗 */}
                     {showItineraryModal && <ItineraryModal onClose={() => setShowItineraryModal(false)} />}
-
                     <main className="max-w-4xl mx-auto w-full px-0 md:px-4 flex-grow">
                         {view === 'form' && (
-                            <div className="animate-fade-in">
-                                <div className="mt-4 md:mt-8 px-4">
-                                    <div className="text-center mb-6">
-                                        <h2 className="text-sm md:text-base font-bold text-sky-600 mb-1 tracking-widest">桃園市結構工程技師公會</h2>
-                                        <h1 className="text-2xl md:text-4xl font-extrabold text-slate-800">2026 紐西蘭參訪暨高爾夫球聯誼活動</h1>
-                                    </div>
-                                    
-                                    {/* 紐西蘭情境圖片 (修改為一般圖片完整呈現) */}
-                                    <div className="rounded-2xl overflow-hidden shadow-lg mb-6">
-                                        <img src="NewZealand.jpg" alt="New Zealand" className="w-full h-auto block" />
-                                    </div>
-
-                                    {/* 活動資訊卡片 */}
-                                    <div className="bg-sky-50 border border-sky-100 rounded-xl p-5 mb-4 text-slate-700 shadow-sm">
-                                        <h3 className="font-bold text-lg text-sky-800 border-b border-sky-200 pb-2 mb-3 flex items-center gap-2">
-                                            <span>📌</span> 活動規劃概要
-                                        </h3>
-                                        <ul className="space-y-2 text-sm md:text-base">
-                                            <li><strong className="text-slate-800">預計時間：</strong>2026年12月</li>
-                                            <li><strong className="text-slate-800">預計行程：</strong>11天9夜（以奧克蘭、皇后鎮地區為主）</li>
-                                            <li><strong className="text-slate-800">活動說明：</strong>本階段僅為<b>【意願與人數調查】</b>，將根據回覆的總人數及參與高爾夫球人數，請旅行社進行詳細行程規劃與報價。<b>此次行程為團體活動，需全員搭乘同一航班，團進團出。</b></li>
-                                            <li><strong className="text-slate-800">填寫期限：</strong>請於 <b className="text-red-600">2026/4/15 PM 11:59</b> 前回覆，感謝配合。</li>
-                                        </ul>
-                                    </div>
-
-                                    {/* 📖 行程表參考區塊 */}
-                                    <div className="bg-white border border-slate-200 rounded-xl p-5 mb-6 shadow-sm">
-                                        <div className="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
-                                            <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
-                                                <Icons.FileText className="w-5 h-5 text-sky-600"/> 參考行程表 (暫定版)
-                                            </h3>
-                                            <a href={ITINERARY_PDF_URL} target="_blank" className="text-sm bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition font-medium">
-                                                <Icons.Download className="w-4 h-4"/> PDF版
-                                            </a>
-                                        </div>
-                                        
-                                        <p className="text-sm text-slate-500 mb-3 flex items-center gap-1">
-                                            點擊下方任一圖片，開啟<b className="text-slate-700">全螢幕閱讀器</b>放大查看：
-                                        </p>
-                                        
-                                        {/* 橫向滑動縮圖區 */}
-                                        <div className="flex overflow-x-auto gap-3 pb-2 no-scrollbar snap-x">
-                                            {ITINERARY_IMAGES.map((src, index) => (
-                                                <div 
-                                                    key={index} 
-                                                    className="relative flex-none w-32 md:w-40 aspect-[3/4] rounded-lg overflow-hidden cursor-pointer border border-slate-200 shadow-sm hover:shadow-md transition group snap-start bg-slate-100"
-                                                    onClick={() => setShowItineraryModal(true)}
-                                                >
-                                                    <img src={src} alt={`行程表縮圖 ${index+1}`} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
-                                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition flex items-center justify-center">
-                                                        <div className="bg-black/60 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition duration-300">
-                                                            <Icons.Search className="w-5 h-5" />
-                                                        </div>
-                                                    </div>
-                                                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-                                                        <span className="text-white text-xs font-medium">第 {index + 1} 頁</span>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    
+                            <div className="animate-fade-in px-4">
+                                <div className="mt-8 text-center mb-6">
+                                    <h2 className="text-sky-600 font-bold mb-1 tracking-widest">桃園市結構工程技師公會</h2>
+                                    <h1 className="text-2xl md:text-4xl font-extrabold text-slate-800">2026 紐西蘭參訪暨高爾夫球聯誼活動</h1>
                                 </div>
-                                <RegistrationForm onSubmit={handleSubmission} isSubmitting={isSubmitting} />
+                                <div className="rounded-2xl overflow-hidden shadow-lg mb-6"><img src="NewZealand.jpg" className="w-full h-auto block" /></div>
+                                <div className="bg-sky-50 border border-sky-100 rounded-xl p-5 mb-4 text-slate-700 shadow-sm text-sm md:text-base">
+                                    <h3 className="font-bold text-lg text-sky-800 border-b border-sky-200 pb-2 mb-3">📌 活動規劃概要</h3>
+                                    <p className="mb-2"><strong>預計時間：</strong>2026年12月 (11天9夜)</p>
+                                    <p className="mb-2"><strong>活動說明：</strong>本階段為意願調查，將根據人數規劃報價。<b>此次行程為團體活動，需全員搭乘同一航班，團進團出。</b></p>
+                                    <p><strong>填寫期限：</strong>請於 <b className="text-red-600">2026/4/15 PM 11:59</b> 前回覆。</p>
+                                </div>
+                                <div className="bg-white border rounded-xl p-5 mb-6 shadow-sm">
+                                    <div className="flex justify-between items-center border-b pb-3 mb-4">
+                                        <h3 className="font-bold flex items-center gap-2"><Icons.FileText className="text-sky-600"/> 參考行程表 (暫定版)</h3>
+                                        <a href={ITINERARY_PDF_URL} target="_blank" className="text-xs bg-sky-50 text-sky-700 border border-sky-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition font-medium"><Icons.Download className="w-3 h-3"/> PDF版</a>
+                                    </div>
+                                    <div className="flex overflow-x-auto gap-3 pb-2 no-scrollbar snap-x">
+                                        {ITINERARY_IMAGES.map((src, idx) => (
+                                            <div key={idx} onClick={() => setShowItineraryModal(true)} className="relative flex-none w-32 md:w-40 aspect-[3/4] rounded-lg overflow-hidden cursor-pointer border shadow-sm group">
+                                                <img src={src} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 flex items-center justify-center transition"><Icons.Search className="text-white opacity-0 group-hover:opacity-100" /></div>
+                                                <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-1 text-white text-[10px] text-center">第 {idx + 1} 頁</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <RegistrationForm onSubmit={(d) => sendToGAS({ ...d, action: 'add', userId: 'ID_' + Date.now(), timestamp: new Date().toISOString() })} isSubmitting={isSubmitting} />
                             </div>
                         )}
-                        
-                        {view === 'admin' && (
-                            <div className="animate-fade-in">
-                                {!isAdminLoggedIn ? 
-                                    <AdminLogin onLogin={setIsAdminLoggedIn} /> : 
-                                    <AdminDashboard registrations={registrations} onLogout={() => setIsAdminLoggedIn(false)} onAction={handleAdminAction} />
-                                }
-                            </div>
-                        )}
+                        {view === 'admin' && (isAdminLoggedIn ? <AdminDashboard registrations={registrations} onLogout={() => setIsAdminLoggedIn(false)} onAction={handleAdminAction} /> : <AdminLogin onLogin={setIsAdminLoggedIn} />)}
                     </main>
-                    <footer className="mt-12 py-6 text-center text-slate-400 text-sm bg-slate-100 border-t border-slate-200">
-                        &copy; 2026 桃園市結構工程技師公會 by 曉芬
-                    </footer>
+                    <footer className="mt-12 py-6 text-center text-slate-400 text-sm bg-slate-100 border-t border-slate-200">&copy; 2026 桃園市結構工程技師公會 by 曉芬</footer>
                 </div>
             );
         };
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     </script>
 </body>
 </html>
