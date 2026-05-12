@@ -586,8 +586,8 @@
                                     <h2 className="text-2xl md:text-3xl font-extrabold text-gray-800 text-center mb-4">桃園市結構工程技師公會</h2>
                                     
                                     {/* 圖片已替換為 Shihmen.jpg */}
-                                    <div className="relative rounded-xl overflow-hidden shadow-md mb-3 border border-gray-200">
-                                        <img src="Shihmen.jpg" alt="石門福華一日遊" className="w-full h-auto object-cover max-h-[400px]" onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/800x400?text=Shihmen+Day+Tour" }} />
+                                    <div className="relative rounded-xl overflow-hidden shadow-md mb-3 border border-gray-200 bg-gray-100 flex justify-center">
+                                        <img src="Shihmen.jpg" alt="石門福華一日遊" className="w-full h-auto object-contain max-h-[600px]" onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/800x400?text=Shihmen+Day+Tour" }} />
                                         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
                                             <h3 className="text-white text-xl font-bold drop-shadow-md">石門福華一日遊</h3>
                                         </div>
@@ -599,7 +599,7 @@
                                             <Icons.MapPin className="w-4 h-4" /> 飯店停車資訊
                                         </button>
                                     </div>
-                                    <p className="text-center text-gray-500 text-sm md:text-base mb-4 font-medium">報名截止日期為 2026/01/25 PM 11:59</p>
+                                    <p className="text-center text-gray-500 text-sm md:text-base mb-4 font-medium">報名截止日期為 2026/05/22 PM 11:59</p>
                                 </div>
                                 <RegistrationForm onSubmit={handleSubmission} isSubmitting={isSubmitting} showMessage={showMessage} />
                             </>
