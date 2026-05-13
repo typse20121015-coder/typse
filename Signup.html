@@ -295,7 +295,7 @@
             </div>
         );
 
-        const RegistrationForm = ({ onSubmit, isSubmitting, showMessage, currentMembers, currentTotal }) => {
+        const RegistrationForm = ({ onSubmit, isSubmitting, showMessage, currentMembers, currentGuests, currentTotal }) => {
             const [formData, setFormData] = useState({ memberName: '', memberBirthday: '', guests: [] });
             const [showSuccess, setShowSuccess] = useState(false);
 
@@ -367,9 +367,22 @@
 
             return (
                 <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-4 md:p-8 mt-4 md:mt-0 mx-2 md:mx-0">
-                    <h2 className="text-xl font-bold text-gray-800 mb-6 border-b pb-3 flex items-center gap-2">
-                        <Icons.UserPlus className="text-indigo-600 w-6 h-6" /> 填寫報名資料
-                    </h2>
+                    <div className="flex flex-col md:flex-row md:justify-between md:items-end mb-6 border-b pb-3 gap-3">
+                        <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                            <Icons.UserPlus className="text-indigo-600 w-6 h-6" /> 填寫報名資料
+                        </h2>
+                        <div className="flex flex-wrap gap-2 text-sm">
+                            <span className="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg border border-indigo-100 font-bold flex items-center gap-1">
+                                <Icons.Users className="w-4 h-4" /> 會員: {currentMembers || 0}
+                            </span>
+                            <span className="bg-green-50 text-green-700 px-3 py-1.5 rounded-lg border border-green-100 font-bold flex items-center gap-1">
+                                <Icons.UserPlus className="w-4 h-4" /> 攜伴: {currentGuests || 0}
+                            </span>
+                            <span className="bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg border border-gray-200 font-bold">
+                                總計: {currentTotal || 0} / 150
+                            </span>
+                        </div>
+                    </div>
                     <div className="space-y-4 mb-8">
                         <h3 className="font-medium text-gray-800 bg-gray-100 p-3 rounded-lg flex items-center gap-2">
                            <span className="w-1.5 h-5 bg-indigo-500 rounded-full block"></span> 會員本人資訊
@@ -849,6 +862,7 @@
                                         isSubmitting={isSubmitting} 
                                         showMessage={showMessage} 
                                         currentMembers={totalMembers}
+                                        currentGuests={totalGuests}
                                         currentTotal={totalPeople}
                                     />
                                 )}
