@@ -70,7 +70,7 @@
             AlertTriangle: (props) => <IconBase {...props}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></IconBase>
         };
 
-        // --- UI 共用元件 (取代原有的 alert 與 confirm) ---
+        // --- UI 共用元件 ---
         const MessageBox = ({ message, onClose }) => (
             <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[70] p-4 modal-overlay">
                 <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden fade-in">
@@ -102,45 +102,81 @@
             </div>
         );
 
-        // --- 輔助函式 ---
+        // --- 日期格式輔助函式 ---
+        // 用於後台顯示：支援 8碼 與 6碼
         const formatDisplayDate = (d) => {
             if (!d) return '';
             if (d.length === 8) return d.replace(/(\d{4})(\d{2})(\d{2})/, '$1/$2/$3');
-            if (d.length === 6) return d.replace(/(\d{2})(\d{2})(\d{2})/, '$1/$2/$3');
-            if (d.length === 4) return d.replace(/(\d{2})(\d{2})/, '$1/$2');
+            if (d.length === 6) return d.replace(/(\d{2})(\d{2})(\d{2})/, '$1/$2/$3'); // 相容舊資料
             return d;
         };
 
+        // 驗證 8 碼日期 (YYYYMMDD)
         const isValidDate = (d) => {
-            if (!d || d.length !== 6) return false;
-            const y = parseInt(d.substring(0, 2));
-            const m = parseInt(d.substring(2, 4));
-            const day = parseInt(d.substring(4, 6));
+            if (!d || d.length !== 8) return false;
+            const y = parseInt(d.substring(0, 4), 10);
+            const m = parseInt(d.substring(4, 6), 10);
+            const day = parseInt(d.substring(6, 8), 10);
+            
+            if (y < 1900 || y > new Date().getFullYear() + 1) return false; // 合理年份範圍
             if (m < 1 || m > 12) return false;
             if (day < 1 || day > 31) return false;
-            if ((m===4||m===6||m===9||m===11) && day>30) return false;
-            if (m===2 && day>29) return false;
+            if ((m === 4 || m === 6 || m === 9 || m === 11) && day > 30) return false;
+            if (m === 2) {
+                const isLeap = (y % 4 === 0 && y % 100 !== 0) || (y % 400 === 0);
+                if (isLeap && day > 29) return false;
+                if (!isLeap && day > 28) return false;
+            }
             return true;
         };
 
+        // 獲取月份 (用於壽星清單)
         const getMonthFromDateString = (d) => {
             if (!d) return -1;
-            if (d.length === 4) return parseInt(d.substring(0, 2));
-            if (d.length === 6) return parseInt(d.substring(2, 4));
-            if (d.length === 8) return parseInt(d.substring(4, 6));
+            if (d.length === 8) return parseInt(d.substring(4, 6), 10); // YYYYMMDD
+            if (d.length === 6) return parseInt(d.substring(2, 4), 10); // 相容舊資料 YYMMDD
             return -1;
         };
 
-        const DateDigitInput = ({ value, onChange, placeholder, required }) => {
+        // --- 智慧日期輸入元件 ---
+        // 負責將使用者的純數字轉為 YYYY/MM/DD 顯示，並儲存 8 碼數字到 state
+        const DateDigitInput = ({ value, onChange, placeholder, required, customClass }) => {
             const handleChange = (e) => {
-                const val = e.target.value.replace(/\D/g, ''); 
-                if (val.length <= 6) onChange(val);
+                // 只保留數字
+                const rawVal = e.target.value.replace(/\D/g, ''); 
+                if (rawVal.length <= 8) {
+                    onChange(rawVal);
+                }
             };
-            const isInvalid = value.length > 0 && (value.length !== 6 || !isValidDate(value));
+
+            // 自動加上 '/' 顯示
+            let displayValue = value;
+            if (value.length > 6) {
+                displayValue = `${value.substring(0, 4)}/${value.substring(4, 6)}/${value.substring(6)}`;
+            } else if (value.length > 4) {
+                displayValue = `${value.substring(0, 4)}/${value.substring(4)}`;
+            }
+
+            const isInvalid = value.length > 0 && (value.length !== 8 || !isValidDate(value));
+            const baseClass = customClass || "w-full p-3 text-lg";
+            
             return (
                 <div className="relative w-full">
-                    <input required={required} type="tel" inputMode="numeric" pattern="[0-9]*" maxLength="6" value={value} onChange={handleChange} placeholder={placeholder || "生日6碼 (如: 850520)"} className={`w-full p-3 border rounded-lg text-lg focus:ring-2 focus:outline-none transition-colors appearance-none ${isInvalid ? 'border-red-300 focus:ring-red-200 bg-red-50' : 'border-gray-300 focus:ring-indigo-500'}`} />
-                    {value.length === 6 && isValidDate(value) && <div className="absolute right-3 top-3.5 text-green-500 pointer-events-none"><Icons.CheckCircle className="w-5 h-5"/></div>}
+                    <input 
+                        required={required} 
+                        type="tel" 
+                        inputMode="numeric" 
+                        value={displayValue} 
+                        onChange={handleChange} 
+                        placeholder={placeholder || "如: 1996/05/20"} 
+                        className={`${baseClass} border rounded-lg focus:ring-2 focus:outline-none transition-colors appearance-none ${isInvalid ? 'border-red-300 focus:ring-red-200 bg-red-50' : 'border-gray-300 focus:ring-indigo-500'}`} 
+                        maxLength="10" 
+                    />
+                    {value.length === 8 && isValidDate(value) && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-500 pointer-events-none">
+                            <Icons.CheckCircle className="w-5 h-5"/>
+                        </div>
+                    )}
                 </div>
             );
         };
@@ -164,7 +200,6 @@
             </header>
         );
 
-        // --- 專屬：圖片放大檢視彈窗 ---
         const ImageViewer = ({ src, onClose, title }) => {
             const [scale, setScale] = useState(1);
             return (
@@ -187,7 +222,6 @@
             );
         };
 
-        // --- 專屬：石門福華停車資訊彈窗 ---
         const ParkingModal = ({ onClose }) => (
             <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm modal-overlay">
                 <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100 fade-in">
@@ -210,7 +244,6 @@
                                     <span className="flex-shrink-0 mt-0.5">📍</span>
                                     <span>桃園市龍潭區民富街176號</span>
                                 </p>
-                                
                                 <div className="text-sm bg-blue-50 text-gray-800 p-4 rounded-lg border border-blue-100 space-y-3">
                                     <div className="flex items-start gap-2">
                                         <span className="flex-shrink-0 mt-0.5 text-blue-600">🚗</span>
@@ -218,7 +251,6 @@
                                             貴賓停車建議可停至<span className="text-blue-700 font-bold mx-1 border-b-2 border-blue-300 pb-0.5">飯店大廳兩旁白線處</span>。
                                         </div>
                                     </div>
-                                    
                                     <div className="flex items-start gap-2 pt-3 border-t border-blue-200/60 text-gray-600">
                                         <span className="flex-shrink-0 mt-0.5 text-orange-500"><Icons.Info className="w-4 h-4"/></span>
                                         <div className="leading-relaxed">
@@ -255,10 +287,17 @@
             const handleSubmit = async (e) => {
                 e.preventDefault();
                 if (!formData.memberName || formData.memberName.trim() === '') return showMessage("請輸入會員姓名");
-                if (formData.memberBirthday.length !== 6 || !isValidDate(formData.memberBirthday)) return showMessage("請檢查會員生日格式 (如850520)");
+                
+                // 驗證8碼日期
+                if (formData.memberBirthday.length !== 8 || !isValidDate(formData.memberBirthday)) {
+                    return showMessage("請檢查會員生日格式，需為西元 8 碼 (如: 1996/05/20)");
+                }
+                
                 for (const guest of formData.guests) {
                     if (!guest.name || guest.name.trim() === '') return showMessage("請輸入攜伴姓名");
-                    if (guest.birthday.length !== 6 || !isValidDate(guest.birthday)) return showMessage(`請檢查攜伴「${guest.name}」的生日格式 (如850520)`);
+                    if (guest.birthday.length !== 8 || !isValidDate(guest.birthday)) {
+                        return showMessage(`請檢查攜伴「${guest.name}」的生日格式，需為西元 8 碼 (如: 1996/05/20)`);
+                    }
                 }
                 const success = await onSubmit(formData);
                 if (success) setShowSuccess(true);
@@ -288,8 +327,8 @@
                                 <input required type="text" name="memberName" value={formData.memberName} onChange={handleMemberChange} placeholder="請輸入真實姓名" className="w-full p-3 border border-gray-300 rounded-lg text-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none appearance-none" />
                             </div>
                             <div className="md:col-span-2">
-                                <label className="block text-xs font-medium text-gray-500 mb-1 ml-1">會員生日 (YYMMDD) *</label>
-                                <DateDigitInput required value={formData.memberBirthday} onChange={handleMemberDateChange} placeholder="如: 850520" />
+                                <label className="block text-xs font-medium text-gray-500 mb-1 ml-1">會員生日 (YYYY/MM/DD) *</label>
+                                <DateDigitInput required value={formData.memberBirthday} onChange={handleMemberDateChange} placeholder="如: 1996/05/20" />
                             </div>
                             <div className="md:col-span-2">
                                 <label className="block text-xs font-medium text-gray-500 mb-1 ml-1">餐點選擇 *</label>
@@ -327,7 +366,7 @@
                                 </div>
                                 <div className="md:col-span-3">
                                     <label className="block text-xs font-medium text-gray-500 mb-1 ml-1">攜伴 {index + 1} 生日</label>
-                                    <DateDigitInput required value={guest.birthday} onChange={(val) => handleGuestChange(index, 'birthday', val)} placeholder="如: 850808" />
+                                    <DateDigitInput required value={guest.birthday} onChange={(val) => handleGuestChange(index, 'birthday', val)} placeholder="如: 1996/05/20" />
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="block text-xs font-medium text-gray-500 mb-1 ml-1">餐點</label>
@@ -372,13 +411,16 @@
             );
         };
 
-        // --- 編輯彈窗組件 (補齊功能) ---
         const EditModal = ({ data, onClose, onSave, showMessage }) => {
             const [formData, setFormData] = useState(JSON.parse(JSON.stringify(data)));
             
             const handleSave = () => {
                 if (!formData.memberName || formData.memberName.trim() === '') return showMessage("請輸入會員姓名");
-                if (formData.memberBirthday.length !== 6 || !isValidDate(formData.memberBirthday)) return showMessage("請檢查會員生日格式 (如850520)");
+                
+                // 由於舊資料可能為 6 碼，編輯時強制升級要求 8 碼
+                if (formData.memberBirthday.length !== 8 || !isValidDate(formData.memberBirthday)) {
+                    return showMessage("請檢查會員生日格式，需為西元 8 碼 (如: 1996/05/20)");
+                }
                 onSave(formData);
             };
 
@@ -395,16 +437,20 @@
                                 <div className="space-y-3">
                                     <div>
                                         <label className="block text-xs font-medium text-gray-500 mb-1">姓名</label>
-                                        <input type="text" value={formData.memberName} onChange={e => setFormData({...formData, memberName: e.target.value})} className="w-full p-2 border rounded" />
+                                        <input type="text" value={formData.memberName} onChange={e => setFormData({...formData, memberName: e.target.value})} className="w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none" />
                                     </div>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-500 mb-1">生日 (YYMMDD)</label>
-                                            <input type="text" maxLength="6" value={formData.memberBirthday} onChange={e => setFormData({...formData, memberBirthday: e.target.value.replace(/\D/g, '')})} className="w-full p-2 border rounded" />
+                                            <label className="block text-xs font-medium text-gray-500 mb-1">生日 (YYYY/MM/DD)</label>
+                                            <DateDigitInput 
+                                                value={formData.memberBirthday} 
+                                                onChange={val => setFormData({...formData, memberBirthday: val})} 
+                                                customClass="w-full p-2 text-base"
+                                            />
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-gray-500 mb-1">餐點</label>
-                                            <select value={formData.memberMeal} onChange={e => setFormData({...formData, memberMeal: e.target.value})} className="w-full p-2 border rounded bg-white"><option value="葷食">葷食</option><option value="素食">素食</option></select>
+                                            <select value={formData.memberMeal} onChange={e => setFormData({...formData, memberMeal: e.target.value})} className="w-full p-2 border rounded bg-white focus:ring-1 focus:ring-indigo-500 outline-none"><option value="葷食">葷食</option><option value="素食">素食</option></select>
                                         </div>
                                     </div>
                                 </div>
@@ -554,13 +600,11 @@
             const [showParkingInfo, setShowParkingInfo] = useState(false);
             const [viewImageModal, setViewImageModal] = useState(null);
             
-            // 全局訊息彈窗狀態
             const [messageContent, setMessageContent] = useState(null);
             const [confirmDialog, setConfirmDialog] = useState(null);
 
             const showMessage = (msg) => setMessageContent(msg);
 
-            // 讀取 Google Sheets 資料
             useEffect(() => {
                 if (view === 'admin' && isAdminLoggedIn) {
                     if(GOOGLE_SCRIPT_URL.includes("請將這裡")) return;
@@ -571,17 +615,15 @@
                 }
             }, [view, isAdminLoggedIn, refreshKey]);
 
-            // 處理一般報名
             const handleSubmission = async (formData) => {
                 return await sendToGAS({ ...formData, action: 'add', userId: 'user_' + Date.now() + Math.random().toString(36).substr(2, 9) });
             };
 
-            // 處理管理員動作 (刪除/修改)
             const handleAdminAction = async (action, data) => {
                 const success = await sendToGAS({ ...data, action: action });
                 if (success) {
                     showMessage(action === 'delete' ? '資料已成功刪除' : '資料修改成功');
-                    setRefreshKey(prev => prev + 1); // 觸發重新讀取資料
+                    setRefreshKey(prev => prev + 1);
                 }
             };
 
@@ -614,13 +656,11 @@
                                 <div className="mt-4 md:mt-6">
                                     <h2 className="text-2xl md:text-3xl font-extrabold text-gray-800 text-center mb-4 px-4">桃園市結構工程技師公會</h2>
                                     
-                                    {/* 滿版圖片，檔名改為0.jpg，移除文字與圓角框架 */}
                                     <div className="w-full mb-5">
                                         <img src="0.jpg" alt="石門福華一日遊" className="w-full h-auto object-cover" onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/800x400?text=Event+Banner" }} />
                                     </div>
 
                                     <div className="px-4">
-                                        {/* 增設左右兩個按鈕 */}
                                         <div className="flex flex-col sm:flex-row justify-center gap-3 mb-6">
                                             <button onClick={() => setViewImageModal({ src: '1.jpg', title: '活動流程' })} className="bg-orange-500 text-white px-6 py-2.5 rounded-full font-bold shadow-md hover:bg-orange-600 transition flex items-center justify-center gap-2 active:scale-95">
                                                 <Icons.Info className="w-5 h-5"/> 點我看活動流程
@@ -643,7 +683,6 @@
                             </>
                         )}
                         
-                        {/* 彈窗渲染區 */}
                         {showParkingInfo && <ParkingModal onClose={() => setShowParkingInfo(false)} />}
                         {viewImageModal && <ImageViewer src={viewImageModal.src} title={viewImageModal.title} onClose={() => setViewImageModal(null)} />}
                         {messageContent && <MessageBox message={messageContent} onClose={() => setMessageContent(null)} />}
