@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>桃園結構工程技師公會-報名系統</title>
     
+    <!-- Open Graph (OG) 標籤 -->
+    <meta property="og:title" content="桃園結構工程技師公會-報名系統" />
+    <meta property="og:description" content="桃園市結構工程技師公會活動報名系統，歡迎踴躍報名參加！" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="0.jpg" /> <!-- 使用原本活動流程的圖作為分享預設縮圖 -->
+    
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -559,7 +565,7 @@
                                                 </div>
                                                 <div className="md:col-span-3">
                                                     <label className="block text-xs font-medium text-gray-500 mb-1">稱謂</label>
-                                                    <select value={guest.relationship} onChange={e => handleGuestChange(index, 'relationship', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg bg-white outline-none focus:border-indigo-400">
+                                                    <select value={guest.relationship} onChange={e => handleGuestChange(index, 'relationship', e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg bg-white outline-none focus:border-indigo-400">
                                                         <option value="配偶/伴侶">配偶/伴侶</option>
                                                         <option value="父母">父母</option>
                                                         <option value="子女">子女</option>
