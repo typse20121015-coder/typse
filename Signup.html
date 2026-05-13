@@ -38,7 +38,7 @@
         // ==========================================
         
         // ★★★ 請將下方的引號內容替換成您部署後的「網頁應用程式網址」 ★★★
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzjqoz3uzHa6fw7E0w_XdOk1pvrERbO_kR5skR2DXP92HcdMyyh2zXQO9FSmN02B56_cA/exec";
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw8UOMrCskJjW62URNXnARLFYwtxuj8X_KL-z2Jk8xn7L97VENYiu53SJw_969_htxv0g/exec";
         
         // ==========================================
 
@@ -135,7 +135,7 @@
             return -1;
         };
 
-        // --- 新增：活動當日年齡計算邏輯 ---
+        // --- 活動當日年齡計算邏輯 ---
         const EVENT_DATE_Y = 2026;
         const EVENT_DATE_M = 5;
         const EVENT_DATE_D = 22;
@@ -295,11 +295,10 @@
             </div>
         );
 
-        const RegistrationForm = ({ onSubmit, isSubmitting, showMessage }) => {
+        const RegistrationForm = ({ onSubmit, isSubmitting, showMessage, currentMembers, currentTotal }) => {
             const [formData, setFormData] = useState({ memberName: '', memberBirthday: '', guests: [] });
             const [showSuccess, setShowSuccess] = useState(false);
 
-            // 【修正：使用防呆的 prev 函數更新，防止快速輸入時狀態遺失】
             const handleMemberChange = (e) => {
                 const { name, value } = e.target;
                 setFormData(prev => ({ ...prev, [name]: value }));
@@ -330,6 +329,26 @@
                         if (guest.birthday.length !== 8 || !isValidDate(guest.birthday)) {
                             return showMessage(`請檢查攜伴「${guest.name || '未命名'}」的生日格式，需為西元 8 碼 (如: 1996/05/20)`);
                         }
+                    }
+                }
+
+                // --- 額滿與超收防護機制 ---
+                const safeMembers = currentMembers || 0;
+                const safeTotal = currentTotal || 0;
+                
+                if (safeMembers + 1 > 75) {
+                    return showMessage("很抱歉，報名失敗。會員報名人數已達上限 (75人)。");
+                }
+                
+                const addingPeople = 1 + (formData.guests ? formData.guests.length : 0);
+                if (safeTotal + addingPeople > 150) {
+                    const availableSpots = 150 - safeTotal;
+                    if (availableSpots <= 0) {
+                        return showMessage("很抱歉，報名失敗。活動總人數已達上限 (150人)。");
+                    } else if (availableSpots === 1) {
+                        return showMessage("很抱歉，名額不足。目前僅剩 1 個名額 (無法再攜伴)。");
+                    } else {
+                        return showMessage(`很抱歉，名額不足。目前僅剩 ${availableSpots} 個名額 (您最多只能再帶 ${availableSpots - 1} 位攜伴)。`);
                     }
                 }
                 
@@ -435,9 +454,7 @@
             );
         };
 
-        // 【修正：大幅升級編輯彈窗，現在可以在後台直接查看與編輯攜伴資料了】
         const EditModal = ({ data, onClose, onSave, showMessage }) => {
-            // 確保資料深拷貝，並預防舊資料沒有 guests 屬性的狀況
             const [formData, setFormData] = useState({
                 ...JSON.parse(JSON.stringify(data)),
                 guests: data.guests || []
@@ -487,7 +504,6 @@
                         </div>
                         
                         <div className="p-5 overflow-y-auto flex-1 space-y-6">
-                            {/* 會員編輯區塊 */}
                             <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                                 <h4 className="font-bold text-gray-700 mb-3 border-b pb-2 flex items-center gap-2">
                                     <span className="w-1.5 h-4 bg-indigo-500 rounded-full block"></span> 會員本人
@@ -508,7 +524,6 @@
                                 </div>
                             </div>
                             
-                            {/* 攜伴編輯區塊 */}
                             <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                                 <div className="flex justify-between items-center mb-3 border-b pb-2">
                                     <h4 className="font-bold text-gray-700 flex items-center gap-2">
@@ -564,21 +579,19 @@
 
         const AdminDashboard = ({ registrations, onLogout, onAction, showMessage, setConfirmDialog }) => {
             const [editingDoc, setEditingDoc] = useState(null);
+            
+            // 後台顯示數據統計
             const totalMembers = registrations.length;
             const totalGuests = registrations.reduce((acc, curr) => acc + (curr.guests?.length || 0), 0);
             const totalPeople = totalMembers + totalGuests;
 
-            // 匯出參加清單
             const exportToCSV = () => {
-                // 表頭加入「序號」與「備註」
                 let csvContent = "\uFEFF序號,報名時間,會員姓名,會員生日,身分,稱謂,對應會員,備註\n";
-                let seq = 1; // 初始化排序號碼
+                let seq = 1; 
                 
                 registrations.forEach(reg => {
                     const date = new Date(reg.timestamp).toLocaleString();
                     const mBd = formatDisplayDate(reg.memberBirthday);
-                    
-                    // 計算會員本人年齡是否小於3歲 (通常會員不會小於3歲，但統一邏輯)
                     const mAge = getAgeOnEvent(reg.memberBirthday);
                     const mRemark = mAge < 3 ? "未滿3歲" : "";
                     
@@ -586,7 +599,6 @@
                     
                     if (reg.guests && reg.guests.length > 0) {
                         reg.guests.forEach(guest => {
-                            // 計算攜伴年齡是否小於3歲
                             const gAge = getAgeOnEvent(guest.birthday);
                             const gRemark = gAge < 3 ? "未滿3歲" : "";
                             
@@ -602,12 +614,10 @@
                 document.body.appendChild(link); link.click(); document.body.removeChild(link);
             };
 
-            // 匯出壽星清單
             const exportBirthdayGiftList = () => {
-                // 表頭加入「序號」
                 let csvContent = "\uFEFF序號,生日月份,姓名,生日,身分,稱謂,對應會員\n";
-                const targetMonths = [3, 4, 5, 6]; // 指定為 3~6 月
-                let seq = 1; // 初始化排序號碼
+                const targetMonths = [3, 4, 5, 6]; 
+                let seq = 1; 
                 
                 registrations.forEach(reg => {
                     if (targetMonths.includes(getMonthFromDateString(reg.memberBirthday))) {
@@ -714,6 +724,7 @@
             const [view, setView] = useState('form');
             const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
             const [registrations, setRegistrations] = useState([]);
+            const [isLoadingData, setIsLoadingData] = useState(true); // 新增：用於記錄是否正在抓取初始數據
             const [isSubmitting, setIsSubmitting] = useState(false);
             const [refreshKey, setRefreshKey] = useState(0);
             const [showParkingInfo, setShowParkingInfo] = useState(false);
@@ -724,15 +735,25 @@
 
             const showMessage = (msg) => setMessageContent(msg);
 
+            // 【修正：移除僅限 admin 才讀取資料的限制，現在一進入網頁就會自動讀取，用於判斷是否額滿】
             useEffect(() => {
-                if (view === 'admin' && isAdminLoggedIn) {
-                    if(GOOGLE_SCRIPT_URL.includes("請將這裡")) return;
-                    fetch(GOOGLE_SCRIPT_URL)
-                        .then(res => res.json())
-                        .then(data => setRegistrations(data.reverse()))
-                        .catch(err => console.error("Error fetching data:", err));
+                if(GOOGLE_SCRIPT_URL.includes("請將這裡")) {
+                    setIsLoadingData(false);
+                    return;
                 }
-            }, [view, isAdminLoggedIn, refreshKey]);
+                
+                setIsLoadingData(true);
+                fetch(GOOGLE_SCRIPT_URL)
+                    .then(res => res.json())
+                    .then(data => {
+                        setRegistrations(data.reverse());
+                        setIsLoadingData(false);
+                    })
+                    .catch(err => {
+                        console.error("Error fetching data:", err);
+                        setIsLoadingData(false);
+                    });
+            }, [refreshKey]);
 
             const handleSubmission = async (formData) => {
                 return await sendToGAS({ ...formData, action: 'add', userId: 'user_' + Date.now() + Math.random().toString(36).substr(2, 9) });
@@ -766,6 +787,12 @@
                 }
             };
 
+            // --- 額滿邏輯計算 ---
+            const totalMembers = registrations.length;
+            const totalGuests = registrations.reduce((acc, curr) => acc + (curr.guests?.length || 0), 0);
+            const totalPeople = totalMembers + totalGuests;
+            const isFull = totalMembers >= 75 || totalPeople >= 150;
+
             return (
                 <div className="flex-grow">
                     <Header setView={setView} view={view} />
@@ -798,7 +825,33 @@
                                         <p className="text-center text-gray-500 text-sm md:text-base mb-4 font-medium">報名截止日期為 2026/05/22 PM 11:59</p>
                                     </div>
                                 </div>
-                                <RegistrationForm onSubmit={handleSubmission} isSubmitting={isSubmitting} showMessage={showMessage} />
+                                
+                                {/* 【新增：載入中、額滿與表單的條件渲染】 */}
+                                {isLoadingData ? (
+                                    <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl shadow-sm border border-gray-100 mt-6 mx-2 md:mx-0">
+                                        <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-100 border-t-indigo-600 mb-4"></div>
+                                        <p className="text-gray-500 font-medium tracking-wide">系統連線中，正在確認剩餘名額...</p>
+                                    </div>
+                                ) : isFull ? (
+                                    <div className="flex flex-col items-center justify-center p-8 md:p-12 bg-white rounded-xl shadow-lg mt-6 text-center border-t-4 border-red-500 mx-2 md:mx-0 fade-in">
+                                        <div className="bg-red-50 p-5 rounded-full mb-5">
+                                            <Icons.AlertTriangle className="w-16 h-16 text-red-500" />
+                                        </div>
+                                        <h2 className="text-2xl md:text-3xl font-extrabold text-gray-800 mb-3">報名已額滿</h2>
+                                        <p className="text-gray-600 mb-6 text-lg">感謝您的熱情參與！<br/>本次活動報名人數已達上限<br/>(會員 75 人 或 總人數 150 人)。</p>
+                                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-sm text-gray-500 w-full max-w-md mx-auto">
+                                            若有任何疑問或需登記候補，請聯繫公會秘書處。
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <RegistrationForm 
+                                        onSubmit={handleSubmission} 
+                                        isSubmitting={isSubmitting} 
+                                        showMessage={showMessage} 
+                                        currentMembers={totalMembers}
+                                        currentTotal={totalPeople}
+                                    />
+                                )}
                             </>
                         )}
                         
