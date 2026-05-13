@@ -299,15 +299,21 @@
             const [formData, setFormData] = useState({ memberName: '', memberBirthday: '', guests: [] });
             const [showSuccess, setShowSuccess] = useState(false);
 
-            const handleMemberChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-            const handleMemberDateChange = (val) => setFormData({ ...formData, memberBirthday: val });
+            // 【修正：使用防呆的 prev 函數更新，防止快速輸入時狀態遺失】
+            const handleMemberChange = (e) => {
+                const { name, value } = e.target;
+                setFormData(prev => ({ ...prev, [name]: value }));
+            };
+            const handleMemberDateChange = (val) => setFormData(prev => ({ ...prev, memberBirthday: val }));
 
-            const addGuest = () => setFormData({ ...formData, guests: [...formData.guests, { name: '', relationship: '配偶/伴侶', birthday: '' }] });
-            const removeGuest = (index) => setFormData({ ...formData, guests: formData.guests.filter((_, i) => i !== index) });
+            const addGuest = () => setFormData(prev => ({ ...prev, guests: [...(prev.guests || []), { name: '', relationship: '配偶/伴侶', birthday: '' }] }));
+            const removeGuest = (index) => setFormData(prev => ({ ...prev, guests: (prev.guests || []).filter((_, i) => i !== index) }));
             const handleGuestChange = (index, field, value) => {
-                const newGuests = [...formData.guests];
-                newGuests[index][field] = value;
-                setFormData({ ...formData, guests: newGuests });
+                setFormData(prev => {
+                    const newGuests = [...(prev.guests || [])];
+                    newGuests[index] = { ...newGuests[index], [field]: value };
+                    return { ...prev, guests: newGuests };
+                });
             };
 
             const handleSubmit = async (e) => {
@@ -318,12 +324,15 @@
                     return showMessage("請檢查會員生日格式，需為西元 8 碼 (如: 1996/05/20)");
                 }
                 
-                for (const guest of formData.guests) {
-                    if (!guest.name || guest.name.trim() === '') return showMessage("請輸入攜伴姓名");
-                    if (guest.birthday.length !== 8 || !isValidDate(guest.birthday)) {
-                        return showMessage(`請檢查攜伴「${guest.name}」的生日格式，需為西元 8 碼 (如: 1996/05/20)`);
+                if (formData.guests && formData.guests.length > 0) {
+                    for (const guest of formData.guests) {
+                        if (!guest.name || guest.name.trim() === '') return showMessage("請輸入攜伴姓名");
+                        if (guest.birthday.length !== 8 || !isValidDate(guest.birthday)) {
+                            return showMessage(`請檢查攜伴「${guest.name || '未命名'}」的生日格式，需為西元 8 碼 (如: 1996/05/20)`);
+                        }
                     }
                 }
+                
                 const success = await onSubmit(formData);
                 if (success) setShowSuccess(true);
             };
@@ -360,16 +369,16 @@
                     <div className="space-y-4 mb-8">
                         <div className="flex items-center mb-2 gap-4">
                             <h3 className="font-medium text-gray-800 bg-gray-100 p-3 rounded-lg flex items-center gap-2">
-                                <span className="w-1.5 h-5 bg-green-500 rounded-full block"></span> 攜伴 ({formData.guests.length})
+                                <span className="w-1.5 h-5 bg-green-500 rounded-full block"></span> 攜伴 ({formData.guests ? formData.guests.length : 0})
                             </h3>
                             <button type="button" onClick={addGuest} className="btn-icon text-sm bg-green-500 hover:bg-green-600 text-white px-4 py-2.5 rounded-lg gap-2 transition shadow-sm whitespace-nowrap active:scale-95">
                                 <Icons.Plus className="w-5 h-5" /> 新增
                             </button>
                         </div>
-                        {formData.guests.length === 0 && (
+                        {(!formData.guests || formData.guests.length === 0) && (
                             <p className="text-sm text-gray-400 italic text-center py-8 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">目前沒有攜伴，若有請點擊上方「新增」</p>
                         )}
-                        {formData.guests.map((guest, index) => (
+                        {formData.guests && formData.guests.map((guest, index) => (
                             <div key={index} className="grid grid-cols-1 md:grid-cols-10 gap-4 p-4 md:p-5 border border-gray-200 rounded-xl relative bg-gray-50 hover:bg-white hover:shadow-md transition-all">
                                 <div className="md:col-span-3">
                                     <label className="block text-xs font-medium text-gray-500 mb-1 ml-1">攜伴 {index + 1} 姓名</label>
@@ -426,47 +435,127 @@
             );
         };
 
+        // 【修正：大幅升級編輯彈窗，現在可以在後台直接查看與編輯攜伴資料了】
         const EditModal = ({ data, onClose, onSave, showMessage }) => {
-            const [formData, setFormData] = useState(JSON.parse(JSON.stringify(data)));
+            // 確保資料深拷貝，並預防舊資料沒有 guests 屬性的狀況
+            const [formData, setFormData] = useState({
+                ...JSON.parse(JSON.stringify(data)),
+                guests: data.guests || []
+            });
             
+            const handleMemberChange = (e) => {
+                const { name, value } = e.target;
+                setFormData(prev => ({ ...prev, [name]: value }));
+            };
+            const handleMemberDateChange = (val) => setFormData(prev => ({ ...prev, memberBirthday: val }));
+
+            const addGuest = () => setFormData(prev => ({ ...prev, guests: [...(prev.guests || []), { name: '', relationship: '配偶/伴侶', birthday: '' }] }));
+            const removeGuest = (index) => setFormData(prev => ({ ...prev, guests: (prev.guests || []).filter((_, i) => i !== index) }));
+            const handleGuestChange = (index, field, value) => {
+                setFormData(prev => {
+                    const newGuests = [...(prev.guests || [])];
+                    newGuests[index] = { ...newGuests[index], [field]: value };
+                    return { ...prev, guests: newGuests };
+                });
+            };
+
             const handleSave = () => {
                 if (!formData.memberName || formData.memberName.trim() === '') return showMessage("請輸入會員姓名");
                 
                 if (formData.memberBirthday.length !== 8 || !isValidDate(formData.memberBirthday)) {
                     return showMessage("請檢查會員生日格式，需為西元 8 碼 (如: 1996/05/20)");
                 }
+                
+                if (formData.guests && formData.guests.length > 0) {
+                    for (const guest of formData.guests) {
+                        if (!guest.name || guest.name.trim() === '') return showMessage("請輸入攜伴姓名");
+                        if (guest.birthday.length !== 8 || !isValidDate(guest.birthday)) {
+                            return showMessage(`請檢查攜伴「${guest.name || '未命名'}」的生日格式，需為西元 8 碼 (如: 1996/05/20)`);
+                        }
+                    }
+                }
+                
                 onSave(formData);
             };
 
             return (
                 <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] p-4 modal-overlay">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden fade-in flex flex-col max-h-[90vh]">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden fade-in flex flex-col max-h-[90vh]">
                         <div className="p-4 bg-indigo-600 flex justify-between items-center text-white">
                             <h3 className="text-lg font-bold flex items-center gap-2"><Icons.Edit className="w-5 h-5"/> 編輯報名資料</h3>
                             <button onClick={onClose} className="hover:bg-indigo-700 p-1 rounded-full"><Icons.X className="w-5 h-5"/></button>
                         </div>
-                        <div className="p-5 overflow-y-auto flex-1 space-y-4">
+                        
+                        <div className="p-5 overflow-y-auto flex-1 space-y-6">
+                            {/* 會員編輯區塊 */}
                             <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                                <h4 className="font-bold text-gray-700 mb-3 border-b pb-2">會員本人</h4>
-                                <div className="space-y-3">
+                                <h4 className="font-bold text-gray-700 mb-3 border-b pb-2 flex items-center gap-2">
+                                    <span className="w-1.5 h-4 bg-indigo-500 rounded-full block"></span> 會員本人
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-xs font-medium text-gray-500 mb-1">姓名</label>
-                                        <input type="text" value={formData.memberName} onChange={e => setFormData({...formData, memberName: e.target.value})} className="w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none" />
+                                        <input type="text" name="memberName" value={formData.memberName} onChange={handleMemberChange} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
                                     </div>
                                     <div>
                                         <label className="block text-xs font-medium text-gray-500 mb-1">生日 (YYYY/MM/DD)</label>
                                         <DateDigitInput 
                                             value={formData.memberBirthday} 
-                                            onChange={val => setFormData({...formData, memberBirthday: val})} 
-                                            customClass="w-full p-2 text-base"
+                                            onChange={handleMemberDateChange} 
+                                            customClass="w-full p-2.5 text-base border-gray-300 rounded-lg"
                                         />
                                     </div>
                                 </div>
                             </div>
+                            
+                            {/* 攜伴編輯區塊 */}
+                            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <div className="flex justify-between items-center mb-3 border-b pb-2">
+                                    <h4 className="font-bold text-gray-700 flex items-center gap-2">
+                                        <span className="w-1.5 h-4 bg-green-500 rounded-full block"></span> 攜伴資料 ({formData.guests?.length || 0})
+                                    </h4>
+                                    <button onClick={addGuest} className="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded text-sm flex items-center gap-1 transition">
+                                        <Icons.Plus className="w-4 h-4"/> 新增攜伴
+                                    </button>
+                                </div>
+                                
+                                {(!formData.guests || formData.guests.length === 0) ? (
+                                    <p className="text-gray-400 text-sm text-center py-4">目前無攜伴資料</p>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {formData.guests.map((guest, index) => (
+                                            <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-3 bg-white p-3 border border-gray-200 rounded-lg relative items-center shadow-sm">
+                                                <div className="md:col-span-4">
+                                                    <label className="block text-xs font-medium text-gray-500 mb-1">姓名</label>
+                                                    <input type="text" value={guest.name} onChange={e => handleGuestChange(index, 'name', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-indigo-400" />
+                                                </div>
+                                                <div className="md:col-span-3">
+                                                    <label className="block text-xs font-medium text-gray-500 mb-1">稱謂</label>
+                                                    <select value={guest.relationship} onChange={e => handleGuestChange(index, 'relationship', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg bg-white outline-none focus:border-indigo-400">
+                                                        <option value="配偶/伴侶">配偶/伴侶</option>
+                                                        <option value="父母">父母</option>
+                                                        <option value="子女">子女</option>
+                                                    </select>
+                                                </div>
+                                                <div className="md:col-span-4">
+                                                    <label className="block text-xs font-medium text-gray-500 mb-1">生日 (8碼)</label>
+                                                    <DateDigitInput value={guest.birthday} onChange={val => handleGuestChange(index, 'birthday', val)} customClass="w-full p-2 text-base border-gray-300 rounded-lg" />
+                                                </div>
+                                                <div className="md:col-span-1 flex justify-end md:justify-center mt-2 md:mt-0">
+                                                    <button onClick={() => removeGuest(index)} className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition" title="刪除">
+                                                        <Icons.Trash2 className="w-5 h-5"/>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
+                        
                         <div className="p-4 border-t flex justify-end gap-3 bg-gray-50">
-                            <button onClick={onClose} className="px-5 py-2 rounded-lg text-gray-600 hover:bg-gray-200 transition">取消</button>
-                            <button onClick={handleSave} className="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-sm">儲存修改</button>
+                            <button onClick={onClose} className="px-6 py-2.5 rounded-lg text-gray-600 font-medium hover:bg-gray-200 transition">取消</button>
+                            <button onClick={handleSave} className="px-6 py-2.5 bg-indigo-600 font-medium text-white rounded-lg hover:bg-indigo-700 transition shadow-sm">儲存修改</button>
                         </div>
                     </div>
                 </div>
@@ -495,7 +584,7 @@
                     
                     csvContent += `"${seq++}","${date}","${reg.memberName}","${mBd}","會員本人","本人","-","${mRemark}"\n`;
                     
-                    if (reg.guests) {
+                    if (reg.guests && reg.guests.length > 0) {
                         reg.guests.forEach(guest => {
                             // 計算攜伴年齡是否小於3歲
                             const gAge = getAgeOnEvent(guest.birthday);
@@ -524,7 +613,7 @@
                     if (targetMonths.includes(getMonthFromDateString(reg.memberBirthday))) {
                         csvContent += `"${seq++}","${getMonthFromDateString(reg.memberBirthday)}月","${reg.memberName}","${formatDisplayDate(reg.memberBirthday)}","會員本人","本人","-"\n`;
                     }
-                    if (reg.guests) {
+                    if (reg.guests && reg.guests.length > 0) {
                         reg.guests.forEach(guest => {
                             if (targetMonths.includes(getMonthFromDateString(guest.birthday))) {
                                 csvContent += `"${seq++}","${getMonthFromDateString(guest.birthday)}月","${guest.name}","${formatDisplayDate(guest.birthday)}","攜伴","${guest.relationship||'親友'}","${reg.memberName}"\n`; 
