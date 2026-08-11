@@ -215,7 +215,7 @@
                 <div className="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
                     <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('form')}>
                         <Icons.Users className="w-6 h-6" />
-                        <h1 className="text-lg md:text-xl font-bold tracking-wider truncate">釣蝦活動報名系統</h1>
+                        <h1 className="text-lg md:text-xl font-bold tracking-wider truncate">公會活動報名系統</h1>
                     </div>
                     <nav className="flex gap-2">
                         <button onClick={() => setView('form')} className={`btn-icon text-xs md:text-sm px-3 py-2 rounded-md transition gap-2 whitespace-nowrap active:scale-95 ${view==='form' ? 'bg-indigo-800' : 'bg-indigo-700 hover:bg-indigo-800'}`}>
@@ -390,7 +390,7 @@
                                 <label className={`flex items-center gap-2 cursor-pointer p-2.5 rounded-lg border transition-all w-fit select-none ${formData.memberBringRod ? 'bg-indigo-50 border-indigo-300' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
                                     <input type="checkbox" name="memberBringRod" checked={formData.memberBringRod} onChange={handleMemberChange} className="w-5 h-5 text-indigo-600 rounded cursor-pointer accent-indigo-600" />
                                     <span className={`text-sm font-medium flex items-center gap-1.5 ${formData.memberBringRod ? 'text-indigo-700' : 'text-gray-700'}`}>
-                                        <span className="text-lg">🎣</span> 我會自備釣竿
+                                        我會自備釣竿
                                     </span>
                                 </label>
                             </div>
@@ -403,7 +403,7 @@
                                 <span className="w-1.5 h-5 bg-green-500 rounded-full block"></span> 攜伴 ({formData.guests ? formData.guests.length : 0})
                             </h3>
                             <button type="button" onClick={addGuest} className="btn-icon text-sm bg-green-500 hover:bg-green-600 text-white px-4 py-2.5 rounded-lg gap-2 transition shadow-sm whitespace-nowrap active:scale-95">
-                                <Icons.Plus className="w-5 h-5" /> 新增攜伴 (無限制)
+                                <Icons.Plus className="w-5 h-5" /> 新增攜伴
                             </button>
                         </div>
                         {(!formData.guests || formData.guests.length === 0) && (
@@ -411,7 +411,7 @@
                         )}
                         {formData.guests && formData.guests.map((guest, index) => (
                             <div key={index} className="grid grid-cols-1 md:grid-cols-10 gap-4 p-4 md:p-5 border border-gray-200 rounded-xl relative bg-gray-50 hover:bg-white hover:shadow-md transition-all">
-                                <div className="md:col-span-3">
+                                <div className="md:col-span-4">
                                     <label className="block text-xs font-medium text-gray-500 mb-1 ml-1">攜伴 {index + 1} 姓名</label>
                                     <input required type="text" value={guest.name} onChange={(e) => handleGuestChange(index, 'name', e.target.value)} placeholder="攜伴姓名" className="w-full p-3 border border-gray-300 rounded-lg text-lg focus:outline-none focus:border-indigo-400 appearance-none" />
                                 </div>
@@ -423,22 +423,24 @@
                                         <option value="子女">子女</option>
                                     </select>
                                 </div>
-                                <div className="md:col-span-3">
+                                <div className="md:col-span-4">
                                     <label className="block text-xs font-medium text-gray-500 mb-1 ml-1">攜伴 {index + 1} 生日</label>
                                     <DateDigitInput required value={guest.birthday} onChange={(val) => handleGuestChange(index, 'birthday', val)} placeholder="如: 1996/05/20" />
                                 </div>
-                                <div className="md:col-span-2 flex items-end justify-end md:justify-center pb-1 mt-2 md:mt-0">
-                                    <button type="button" onClick={() => removeGuest(index)} className="btn-icon text-red-500 hover:text-red-700 p-2 bg-white border border-gray-200 hover:border-red-200 rounded-lg transition gap-2 w-full md:w-auto h-full min-h-[44px]">
-                                        <Icons.Trash2 className="w-5 h-5" /> <span className="md:hidden text-sm font-medium">刪除此位</span>
-                                    </button>
-                                </div>
-                                <div className="md:col-span-10 mt-1 border-t border-gray-100 pt-3">
+                                
+                                <div className="md:col-span-10 mt-1">
                                     <label className={`flex items-center gap-2 cursor-pointer p-2 rounded-lg border transition-all w-fit select-none ${guest.bringRod ? 'bg-indigo-50 border-indigo-300' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
                                         <input type="checkbox" checked={guest.bringRod || false} onChange={(e) => handleGuestChange(index, 'bringRod', e.target.checked)} className="w-4 h-4 text-indigo-600 rounded cursor-pointer accent-indigo-600" />
                                         <span className={`text-sm font-medium flex items-center gap-1.5 ${guest.bringRod ? 'text-indigo-700' : 'text-gray-700'}`}>
-                                            <span className="text-base">🎣</span> 自備釣竿
+                                            自備釣竿
                                         </span>
                                     </label>
+                                </div>
+
+                                <div className="md:col-span-10 mt-2 flex justify-end border-t border-gray-200 pt-3">
+                                    <button type="button" onClick={() => removeGuest(index)} className="btn-icon text-red-500 hover:text-red-700 p-2 bg-white border border-gray-200 hover:border-red-200 rounded-lg transition gap-2 w-full md:w-auto h-full min-h-[44px]">
+                                        <Icons.Trash2 className="w-5 h-5" /> <span className="text-sm font-medium">刪除此位</span>
+                                    </button>
                                 </div>
                             </div>
                         ))}
@@ -545,7 +547,7 @@
                                         <label className={`flex items-center gap-2 cursor-pointer p-2 rounded-lg border transition-all w-fit select-none ${formData.memberBringRod ? 'bg-indigo-50 border-indigo-300' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
                                             <input type="checkbox" name="memberBringRod" checked={formData.memberBringRod || false} onChange={handleMemberChange} className="w-4 h-4 text-indigo-600 rounded cursor-pointer accent-indigo-600" />
                                             <span className={`text-sm font-medium flex items-center gap-1.5 ${formData.memberBringRod ? 'text-indigo-700' : 'text-gray-700'}`}>
-                                                <span>🎣</span> 自備釣竿
+                                                自備釣竿
                                             </span>
                                         </label>
                                     </div>
@@ -580,22 +582,24 @@
                                                         <option value="子女">子女</option>
                                                     </select>
                                                 </div>
-                                                <div className="md:col-span-4">
+                                                <div className="md:col-span-5">
                                                     <label className="block text-xs font-medium text-gray-500 mb-1">生日 (8碼)</label>
                                                     <DateDigitInput value={guest.birthday} onChange={val => handleGuestChange(index, 'birthday', val)} customClass="w-full p-2 text-base border-gray-300 rounded-lg" />
                                                 </div>
-                                                <div className="md:col-span-1 flex justify-end md:justify-center mt-2 md:mt-0">
-                                                    <button onClick={() => removeGuest(index)} className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition" title="刪除">
-                                                        <Icons.Trash2 className="w-5 h-5"/>
-                                                    </button>
-                                                </div>
-                                                <div className="md:col-span-12 mt-1 border-t border-gray-100 pt-2">
+                                                
+                                                <div className="md:col-span-12 mt-1">
                                                     <label className={`flex items-center gap-2 cursor-pointer p-1.5 rounded-lg border transition-all w-fit select-none ${guest.bringRod ? 'bg-indigo-50 border-indigo-300' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
                                                         <input type="checkbox" checked={guest.bringRod || false} onChange={(e) => handleGuestChange(index, 'bringRod', e.target.checked)} className="w-4 h-4 text-indigo-600 rounded cursor-pointer accent-indigo-600" />
                                                         <span className={`text-xs font-medium flex items-center gap-1 ${guest.bringRod ? 'text-indigo-700' : 'text-gray-700'}`}>
-                                                            <span>🎣</span> 自備釣竿
+                                                            自備釣竿
                                                         </span>
                                                     </label>
+                                                </div>
+
+                                                <div className="md:col-span-12 flex justify-end border-t border-gray-100 pt-2 mt-1">
+                                                    <button onClick={() => removeGuest(index)} className="text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg transition flex items-center gap-1 text-sm border border-transparent hover:border-red-100" title="刪除此位">
+                                                        <Icons.Trash2 className="w-4 h-4"/> 刪除此位
+                                                    </button>
                                                 </div>
                                             </div>
                                         ))}
@@ -845,10 +849,10 @@
                         {view === 'form' && (
                             <>
                                 <div className="mt-4 md:mt-6">
-                                    <h2 className="text-2xl md:text-3xl font-extrabold text-gray-800 text-center mb-4 px-4">桃園市結構工程技師公會<br/>釣蝦活動</h2>
+                                    <h2 className="text-2xl md:text-3xl font-extrabold text-gray-800 text-center mb-4 px-4">桃園市結構工程技師公會</h2>
                                     
                                     <div className="w-full mb-5">
-                                        <img src="shrimp_banner.jpg" alt="公會釣蝦活動" className="w-full h-auto object-cover rounded-lg shadow-sm" onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/800x400?text=Shrimp+Fishing+Event" }} />
+                                        <img src="shrimp_banner.jpg" alt="公會活動" className="w-full h-auto object-cover rounded-lg shadow-sm" onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/800x400?text=Shrimp+Fishing+Event" }} />
                                     </div>
 
                                     <div className="px-4">
