@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>桃園結構工程技師公會-報名系統</title>
+    <title>桃園結構工程技師公會-釣蝦活動報名系統</title>
     
     <!-- Open Graph (OG) 標籤 -->
-    <meta property="og:title" content="桃園結構工程技師公會-報名系統" />
-    <meta property="og:description" content="桃園市結構工程技師公會活動報名系統，歡迎踴躍報名參加！" />
+    <meta property="og:title" content="桃園結構工程技師公會-釣蝦活動報名系統" />
+    <meta property="og:description" content="桃園市結構工程技師公會釣蝦活動報名系統，歡迎踴躍報名參加！" />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="00.jpg" /> <!-- 使用原本活動流程的圖作為分享預設縮圖 -->
+    <meta property="og:image" content="shrimp_banner.jpg" /> <!-- 更新為釣蝦活動縮圖 -->
     
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -143,20 +143,18 @@
 
         // --- 活動當日年齡計算邏輯 ---
         const EVENT_DATE_Y = 2026;
-        const EVENT_DATE_M = 5;
-        const EVENT_DATE_D = 22;
+        const EVENT_DATE_M = 8;
+        const EVENT_DATE_D = 25; // 假設活動在8月底
 
         const getAgeOnEvent = (dStr) => {
             if (!dStr) return 99; // 防呆
             let y, m, d;
             
-            // 解析年、月、日
             if (dStr.length === 8) {
                 y = parseInt(dStr.substring(0, 4), 10);
                 m = parseInt(dStr.substring(4, 6), 10);
                 d = parseInt(dStr.substring(6, 8), 10);
             } else if (dStr.length === 6) {
-                // 相容 6 碼舊資料
                 let yy = parseInt(dStr.substring(0, 2), 10);
                 y = yy > 30 ? 1900 + yy : 2000 + yy;
                 m = parseInt(dStr.substring(2, 4), 10);
@@ -165,10 +163,8 @@
                 return 99;
             }
             
-            // 計算活動當天的實足年齡
             let age = EVENT_DATE_Y - y;
             let mDiff = EVENT_DATE_M - m;
-            // 如果活動月份小於生日月份，或同月份但活動日還沒到生日那一天，年齡減一
             if (mDiff < 0 || (mDiff === 0 && EVENT_DATE_D < d)) {
                 age--;
             }
@@ -219,7 +215,7 @@
                 <div className="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
                     <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('form')}>
                         <Icons.Users className="w-6 h-6" />
-                        <h1 className="text-lg md:text-xl font-bold tracking-wider truncate">公會活動報名系統</h1>
+                        <h1 className="text-lg md:text-xl font-bold tracking-wider truncate">釣蝦活動報名系統</h1>
                     </div>
                     <nav className="flex gap-2">
                         <button onClick={() => setView('form')} className={`btn-icon text-xs md:text-sm px-3 py-2 rounded-md transition gap-2 whitespace-nowrap active:scale-95 ${view==='form' ? 'bg-indigo-800' : 'bg-indigo-700 hover:bg-indigo-800'}`}>
@@ -270,24 +266,24 @@
                         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
                             <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
                                 <span className="bg-indigo-100 text-indigo-700 font-bold rounded-full w-7 h-7 flex items-center justify-center flex-shrink-0 text-sm">P</span>
-                                <h4 className="font-bold text-lg text-gray-900">石門水庫福華渡假飯店</h4>
+                                <h4 className="font-bold text-lg text-gray-900">釣蝦場專屬停車場</h4>
                             </div>
                             <div className="space-y-4 mt-2">
                                 <p className="text-sm text-gray-600 flex items-start gap-2 bg-gray-50 p-3 rounded-lg">
                                     <span className="flex-shrink-0 mt-0.5">📍</span>
-                                    <span>桃園市龍潭區民富街176號</span>
+                                    <span>325桃園市龍潭區九龍里五福街262巷69之1號</span>
                                 </p>
                                 <div className="text-sm bg-blue-50 text-gray-800 p-4 rounded-lg border border-blue-100 space-y-3">
                                     <div className="flex items-start gap-2">
                                         <span className="flex-shrink-0 mt-0.5 text-blue-600">🚗</span>
                                         <div className="leading-relaxed font-medium">
-                                            貴賓停車建議可停至<span className="text-blue-700 font-bold mx-1 border-b-2 border-blue-300 pb-0.5">飯店大廳兩旁白線處</span>。
+                                            戶外附設 <span className="text-blue-700 font-bold mx-1 border-b-2 border-blue-300 pb-0.5">500坪超大專屬免費停車場</span>，大約可容納50輛車。
                                         </div>
                                     </div>
                                     <div className="flex items-start gap-2 pt-3 border-t border-blue-200/60 text-gray-600">
                                         <span className="flex-shrink-0 mt-0.5 text-orange-500"><Icons.Info className="w-4 h-4"/></span>
                                         <div className="leading-relaxed">
-                                            因室內停車位數量有限，恕無法預約保留車位，敬請見諒。
+                                            因停車位數量有限，恕無法預約保留車位，敬請見諒。
                                         </div>
                                     </div>
                                 </div>
@@ -302,16 +298,16 @@
         );
 
         const RegistrationForm = ({ onSubmit, isSubmitting, showMessage, currentMembers, currentGuests, currentTotal }) => {
-            const [formData, setFormData] = useState({ memberName: '', memberBirthday: '', guests: [] });
+            const [formData, setFormData] = useState({ memberName: '', memberBirthday: '', memberBringRod: false, guests: [] });
             const [showSuccess, setShowSuccess] = useState(false);
 
             const handleMemberChange = (e) => {
-                const { name, value } = e.target;
-                setFormData(prev => ({ ...prev, [name]: value }));
+                const { name, value, type, checked } = e.target;
+                setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
             };
             const handleMemberDateChange = (val) => setFormData(prev => ({ ...prev, memberBirthday: val }));
 
-            const addGuest = () => setFormData(prev => ({ ...prev, guests: [...(prev.guests || []), { name: '', relationship: '配偶/伴侶', birthday: '' }] }));
+            const addGuest = () => setFormData(prev => ({ ...prev, guests: [...(prev.guests || []), { name: '', relationship: '配偶/伴侶', birthday: '', bringRod: false }] }));
             const removeGuest = (index) => setFormData(prev => ({ ...prev, guests: (prev.guests || []).filter((_, i) => i !== index) }));
             const handleGuestChange = (index, field, value) => {
                 setFormData(prev => {
@@ -338,24 +334,11 @@
                     }
                 }
 
-                // --- 額滿與超收防護機制 ---
+                // --- 額滿與超收防護機制 (總人數不設限，僅限會員上限72) ---
                 const safeMembers = currentMembers || 0;
-                const safeTotal = currentTotal || 0;
                 
-                if (safeMembers + 1 > 75) {
-                    return showMessage("很抱歉，報名失敗。會員報名人數已達上限 (75人)。");
-                }
-                
-                const addingPeople = 1 + (formData.guests ? formData.guests.length : 0);
-                if (safeTotal + addingPeople > 150) {
-                    const availableSpots = 150 - safeTotal;
-                    if (availableSpots <= 0) {
-                        return showMessage("很抱歉，報名失敗。活動總人數已達上限 (150人)。");
-                    } else if (availableSpots === 1) {
-                        return showMessage("很抱歉，名額不足。目前僅剩 1 個名額 (無法再攜伴)。");
-                    } else {
-                        return showMessage(`很抱歉，名額不足。目前僅剩 ${availableSpots} 個名額 (您最多只能再帶 ${availableSpots - 1} 位攜伴)。`);
-                    }
+                if (safeMembers + 1 > 72) {
+                    return showMessage("很抱歉，報名失敗。會員報名人數已達上限 (72人)。");
                 }
                 
                 const success = await onSubmit(formData);
@@ -379,16 +362,17 @@
                         </h2>
                         <div className="flex flex-wrap gap-2 text-sm">
                             <span className="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg border border-indigo-100 font-bold flex items-center gap-1">
-                                <Icons.Users className="w-4 h-4" /> 會員: {currentMembers || 0}
+                                <Icons.Users className="w-4 h-4" /> 會員: {currentMembers || 0} / 72
                             </span>
                             <span className="bg-green-50 text-green-700 px-3 py-1.5 rounded-lg border border-green-100 font-bold flex items-center gap-1">
                                 <Icons.UserPlus className="w-4 h-4" /> 攜伴: {currentGuests || 0}
                             </span>
                             <span className="bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg border border-gray-200 font-bold">
-                                總計: {currentTotal || 0} / 150
+                                總人數: {currentTotal || 0} 人
                             </span>
                         </div>
                     </div>
+                    
                     <div className="space-y-4 mb-8">
                         <h3 className="font-medium text-gray-800 bg-gray-100 p-3 rounded-lg flex items-center gap-2">
                            <span className="w-1.5 h-5 bg-indigo-500 rounded-full block"></span> 會員本人資訊
@@ -402,15 +386,24 @@
                                 <label className="block text-xs font-medium text-gray-500 mb-1 ml-1">會員生日 (YYYY/MM/DD) *</label>
                                 <DateDigitInput required value={formData.memberBirthday} onChange={handleMemberDateChange} placeholder="如: 1996/05/20" />
                             </div>
+                            <div className="md:col-span-5 mt-1 border-t border-gray-100 pt-3">
+                                <label className={`flex items-center gap-2 cursor-pointer p-2.5 rounded-lg border transition-all w-fit select-none ${formData.memberBringRod ? 'bg-indigo-50 border-indigo-300' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                                    <input type="checkbox" name="memberBringRod" checked={formData.memberBringRod} onChange={handleMemberChange} className="w-5 h-5 text-indigo-600 rounded cursor-pointer accent-indigo-600" />
+                                    <span className={`text-sm font-medium flex items-center gap-1.5 ${formData.memberBringRod ? 'text-indigo-700' : 'text-gray-700'}`}>
+                                        <span className="text-lg">🎣</span> 我會自備釣竿
+                                    </span>
+                                </label>
+                            </div>
                         </div>
                     </div>
+
                     <div className="space-y-4 mb-8">
                         <div className="flex items-center mb-2 gap-4">
                             <h3 className="font-medium text-gray-800 bg-gray-100 p-3 rounded-lg flex items-center gap-2">
                                 <span className="w-1.5 h-5 bg-green-500 rounded-full block"></span> 攜伴 ({formData.guests ? formData.guests.length : 0})
                             </h3>
                             <button type="button" onClick={addGuest} className="btn-icon text-sm bg-green-500 hover:bg-green-600 text-white px-4 py-2.5 rounded-lg gap-2 transition shadow-sm whitespace-nowrap active:scale-95">
-                                <Icons.Plus className="w-5 h-5" /> 新增
+                                <Icons.Plus className="w-5 h-5" /> 新增攜伴 (無限制)
                             </button>
                         </div>
                         {(!formData.guests || formData.guests.length === 0) && (
@@ -438,6 +431,14 @@
                                     <button type="button" onClick={() => removeGuest(index)} className="btn-icon text-red-500 hover:text-red-700 p-2 bg-white border border-gray-200 hover:border-red-200 rounded-lg transition gap-2 w-full md:w-auto h-full min-h-[44px]">
                                         <Icons.Trash2 className="w-5 h-5" /> <span className="md:hidden text-sm font-medium">刪除此位</span>
                                     </button>
+                                </div>
+                                <div className="md:col-span-10 mt-1 border-t border-gray-100 pt-3">
+                                    <label className={`flex items-center gap-2 cursor-pointer p-2 rounded-lg border transition-all w-fit select-none ${guest.bringRod ? 'bg-indigo-50 border-indigo-300' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                                        <input type="checkbox" checked={guest.bringRod || false} onChange={(e) => handleGuestChange(index, 'bringRod', e.target.checked)} className="w-4 h-4 text-indigo-600 rounded cursor-pointer accent-indigo-600" />
+                                        <span className={`text-sm font-medium flex items-center gap-1.5 ${guest.bringRod ? 'text-indigo-700' : 'text-gray-700'}`}>
+                                            <span className="text-base">🎣</span> 自備釣竿
+                                        </span>
+                                    </label>
                                 </div>
                             </div>
                         ))}
@@ -480,12 +481,12 @@
             });
             
             const handleMemberChange = (e) => {
-                const { name, value } = e.target;
-                setFormData(prev => ({ ...prev, [name]: value }));
+                const { name, value, type, checked } = e.target;
+                setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
             };
             const handleMemberDateChange = (val) => setFormData(prev => ({ ...prev, memberBirthday: val }));
 
-            const addGuest = () => setFormData(prev => ({ ...prev, guests: [...(prev.guests || []), { name: '', relationship: '配偶/伴侶', birthday: '' }] }));
+            const addGuest = () => setFormData(prev => ({ ...prev, guests: [...(prev.guests || []), { name: '', relationship: '配偶/伴侶', birthday: '', bringRod: false }] }));
             const removeGuest = (index) => setFormData(prev => ({ ...prev, guests: (prev.guests || []).filter((_, i) => i !== index) }));
             const handleGuestChange = (index, field, value) => {
                 setFormData(prev => {
@@ -540,6 +541,14 @@
                                             customClass="w-full p-2.5 text-base border-gray-300 rounded-lg"
                                         />
                                     </div>
+                                    <div className="md:col-span-2 mt-1">
+                                        <label className={`flex items-center gap-2 cursor-pointer p-2 rounded-lg border transition-all w-fit select-none ${formData.memberBringRod ? 'bg-indigo-50 border-indigo-300' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                                            <input type="checkbox" name="memberBringRod" checked={formData.memberBringRod || false} onChange={handleMemberChange} className="w-4 h-4 text-indigo-600 rounded cursor-pointer accent-indigo-600" />
+                                            <span className={`text-sm font-medium flex items-center gap-1.5 ${formData.memberBringRod ? 'text-indigo-700' : 'text-gray-700'}`}>
+                                                <span>🎣</span> 自備釣竿
+                                            </span>
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -580,6 +589,14 @@
                                                         <Icons.Trash2 className="w-5 h-5"/>
                                                     </button>
                                                 </div>
+                                                <div className="md:col-span-12 mt-1 border-t border-gray-100 pt-2">
+                                                    <label className={`flex items-center gap-2 cursor-pointer p-1.5 rounded-lg border transition-all w-fit select-none ${guest.bringRod ? 'bg-indigo-50 border-indigo-300' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                                                        <input type="checkbox" checked={guest.bringRod || false} onChange={(e) => handleGuestChange(index, 'bringRod', e.target.checked)} className="w-4 h-4 text-indigo-600 rounded cursor-pointer accent-indigo-600" />
+                                                        <span className={`text-xs font-medium flex items-center gap-1 ${guest.bringRod ? 'text-indigo-700' : 'text-gray-700'}`}>
+                                                            <span>🎣</span> 自備釣竿
+                                                        </span>
+                                                    </label>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -605,7 +622,7 @@
             const totalPeople = totalMembers + totalGuests;
 
             const exportToCSV = () => {
-                let csvContent = "\uFEFF序號,報名時間,會員姓名,會員生日,身分,稱謂,對應會員,備註\n";
+                let csvContent = "\uFEFF序號,報名時間,會員姓名,會員生日,身分,稱謂,對應會員,自備釣竿,備註\n";
                 let seq = 1; 
                 
                 registrations.forEach(reg => {
@@ -613,15 +630,17 @@
                     const mBd = formatDisplayDate(reg.memberBirthday);
                     const mAge = getAgeOnEvent(reg.memberBirthday);
                     const mRemark = mAge < 3 ? "未滿3歲" : "";
+                    const mRod = reg.memberBringRod ? "是" : "否";
                     
-                    csvContent += `"${seq++}","${date}","${reg.memberName}","${mBd}","會員本人","本人","-","${mRemark}"\n`;
+                    csvContent += `"${seq++}","${date}","${reg.memberName}","${mBd}","會員本人","本人","-","${mRod}","${mRemark}"\n`;
                     
                     if (reg.guests && reg.guests.length > 0) {
                         reg.guests.forEach(guest => {
                             const gAge = getAgeOnEvent(guest.birthday);
                             const gRemark = gAge < 3 ? "未滿3歲" : "";
+                            const gRod = guest.bringRod ? "是" : "否";
                             
-                            csvContent += `"${seq++}","${date}","${guest.name}","${formatDisplayDate(guest.birthday)}","攜伴","${guest.relationship||'親友'}","${reg.memberName}","${gRemark}"\n`;
+                            csvContent += `"${seq++}","${date}","${guest.name}","${formatDisplayDate(guest.birthday)}","攜伴","${guest.relationship||'親友'}","${reg.memberName}","${gRod}","${gRemark}"\n`;
                         });
                     }
                 });
@@ -635,7 +654,7 @@
 
             const exportBirthdayGiftList = () => {
                 let csvContent = "\uFEFF序號,生日月份,姓名,生日,身分,稱謂,對應會員\n";
-                const targetMonths = [3, 4, 5, 6]; 
+                const targetMonths = [3, 4, 5, 6, 7, 8, 9, 10]; // 可根據公會禮物發放邏輯調整
                 let seq = 1; 
                 
                 registrations.forEach(reg => {
@@ -651,7 +670,7 @@
                     }
                 });
                 
-                if (seq === 1) return showMessage("清單內沒有 3~6 月壽星的資料");
+                if (seq === 1) return showMessage("清單內沒有符合壽星月份的資料");
                 
                 const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement("a");
@@ -717,13 +736,21 @@
                                                 </div>
                                             </td>
                                             <td className="px-4 py-4 whitespace-nowrap">
-                                                <div className="font-bold">{reg.memberName}</div>
+                                                <div className="font-bold flex items-center gap-1">
+                                                    {reg.memberName}
+                                                    {reg.memberBringRod && <span title="自備釣竿" className="text-lg">🎣</span>}
+                                                </div>
                                                 <div className="text-sm text-indigo-600">{formatDisplayDate(reg.memberBirthday)}</div>
                                             </td>
                                             <td className="px-4 py-4">
                                                 {(!reg.guests || reg.guests.length === 0) ? <span className="text-xs text-gray-400">無</span> : 
                                                     reg.guests.map((g, i) => (
-                                                        <div key={i} className="text-sm mb-1">{g.name} <span className="text-xs bg-indigo-50 text-indigo-700 px-1 rounded ml-1">[{g.relationship || '親友'}]</span> <span className="text-gray-400 text-xs">({formatDisplayDate(g.birthday)})</span></div>
+                                                        <div key={i} className="text-sm mb-1 flex items-center gap-1 flex-wrap">
+                                                            <span>{g.name}</span>
+                                                            <span className="text-xs bg-indigo-50 text-indigo-700 px-1 rounded">[{g.relationship || '親友'}]</span> 
+                                                            {g.bringRod && <span title="自備釣竿" className="text-base">🎣</span>}
+                                                            <span className="text-gray-400 text-xs">({formatDisplayDate(g.birthday)})</span>
+                                                        </div>
                                                     ))
                                                 }
                                             </td>
@@ -743,7 +770,7 @@
             const [view, setView] = useState('form');
             const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
             const [registrations, setRegistrations] = useState([]);
-            const [isLoadingData, setIsLoadingData] = useState(true); // 新增：用於記錄是否正在抓取初始數據
+            const [isLoadingData, setIsLoadingData] = useState(true);
             const [isSubmitting, setIsSubmitting] = useState(false);
             const [refreshKey, setRefreshKey] = useState(0);
             const [showParkingInfo, setShowParkingInfo] = useState(false);
@@ -754,7 +781,6 @@
 
             const showMessage = (msg) => setMessageContent(msg);
 
-            // 【修正：移除僅限 admin 才讀取資料的限制，現在一進入網頁就會自動讀取，用於判斷是否額滿】
             useEffect(() => {
                 if(GOOGLE_SCRIPT_URL.includes("請將這裡")) {
                     setIsLoadingData(false);
@@ -806,11 +832,11 @@
                 }
             };
 
-            // --- 額滿邏輯計算 ---
+            // --- 額滿邏輯計算 (只計算會員人數) ---
             const totalMembers = registrations.length;
             const totalGuests = registrations.reduce((acc, curr) => acc + (curr.guests?.length || 0), 0);
             const totalPeople = totalMembers + totalGuests;
-            const isFull = totalMembers >= 75 || totalPeople >= 150;
+            const isFull = totalMembers >= 72; // 會員達 72 人即額滿
 
             return (
                 <div className="flex-grow">
@@ -819,33 +845,31 @@
                         {view === 'form' && (
                             <>
                                 <div className="mt-4 md:mt-6">
-                                    <h2 className="text-2xl md:text-3xl font-extrabold text-gray-800 text-center mb-4 px-4">桃園市結構工程技師公會</h2>
+                                    <h2 className="text-2xl md:text-3xl font-extrabold text-gray-800 text-center mb-4 px-4">桃園市結構工程技師公會<br/>釣蝦活動</h2>
                                     
                                     <div className="w-full mb-5">
-                                        <img src="0.jpg" alt="石門福華一日遊" className="w-full h-auto object-cover" onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/800x400?text=Event+Banner" }} />
+                                        <img src="shrimp_banner.jpg" alt="公會釣蝦活動" className="w-full h-auto object-cover rounded-lg shadow-sm" onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/800x400?text=Shrimp+Fishing+Event" }} />
                                     </div>
 
                                     <div className="px-4">
                                         <div className="flex flex-col sm:flex-row justify-center gap-3 mb-6">
-                                            <button onClick={() => setViewImageModal({ src: '1.jpg', title: '活動流程' })} className="bg-orange-500 text-white px-6 py-2.5 rounded-full font-bold shadow-md hover:bg-orange-600 transition flex items-center justify-center gap-2 active:scale-95">
+                                            <button onClick={() => setViewImageModal({ src: 'shrimp_flow.jpg', title: '活動流程' })} className="bg-orange-500 text-white px-6 py-2.5 rounded-full font-bold shadow-md hover:bg-orange-600 transition flex items-center justify-center gap-2 active:scale-95">
                                                 <Icons.Info className="w-5 h-5"/> 點我看活動流程
                                             </button>
-                                            <button onClick={() => setViewImageModal({ src: '2.jpg', title: '休閒設施' })} className="bg-teal-500 text-white px-6 py-2.5 rounded-full font-bold shadow-md hover:bg-teal-600 transition flex items-center justify-center gap-2 active:scale-95">
-                                                <Icons.Info className="w-5 h-5"/> 點我看休閒設施
-                                            </button>
+                                            {/* 移除了休閒設施按鈕 */}
                                         </div>
 
                                         <div className="flex flex-col md:flex-row items-center justify-center gap-3 mb-2 bg-blue-50 p-3 rounded-lg border border-blue-100">
                                             <p className="text-center text-blue-800 text-sm md:text-base font-medium">本活動交通部分請會員自行安排，敬請見諒。</p>
                                             <button onClick={() => setShowParkingInfo(true)} className="text-sm bg-blue-600 text-white px-5 py-2 rounded-full hover:bg-blue-700 transition flex items-center gap-1.5 shadow-sm active:scale-95">
-                                                <Icons.MapPin className="w-4 h-4" /> 飯店停車資訊
+                                                <Icons.MapPin className="w-4 h-4" /> 釣蝦場停車資訊
                                             </button>
                                         </div>
-                                        <p className="text-center text-gray-500 text-sm md:text-base mb-4 font-medium">報名截止日期為 2026/05/22 PM 11:59</p>
+                                        {/* 更新報名截止日期為 8/20 */}
+                                        <p className="text-center text-gray-500 text-sm md:text-base mb-4 font-medium">報名截止日期為 2026/08/20 PM 11:59</p>
                                     </div>
                                 </div>
                                 
-                                {/* 【新增：載入中、額滿與表單的條件渲染】 */}
                                 {isLoadingData ? (
                                     <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl shadow-sm border border-gray-100 mt-6 mx-2 md:mx-0">
                                         <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-100 border-t-indigo-600 mb-4"></div>
@@ -857,7 +881,7 @@
                                             <Icons.AlertTriangle className="w-16 h-16 text-red-500" />
                                         </div>
                                         <h2 className="text-2xl md:text-3xl font-extrabold text-gray-800 mb-3">報名已額滿</h2>
-                                        <p className="text-gray-600 mb-6 text-lg">感謝您的熱情參與！<br/>本次活動報名人數已達上限<br/>(會員 75 人 或 總人數 150 人)。</p>
+                                        <p className="text-gray-600 mb-6 text-lg">感謝您的熱情參與！<br/>本次活動報名人數已達上限<br/>(會員已滿 72 人)。</p>
                                         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-sm text-gray-500 w-full max-w-md mx-auto">
                                             若有任何疑問或需登記候補，請聯繫公會秘書處。
                                         </div>
