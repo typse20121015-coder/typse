@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>桃園結構工程技師公會-釣蝦活動報名系統</title>
+    <title>桃園結構工程技師公會-報名系統</title>
     
     <!-- Open Graph (OG) 標籤 -->
-    <meta property="og:title" content="桃園結構工程技師公會-釣蝦活動報名系統" />
-    <meta property="og:description" content="桃園市結構工程技師公會釣蝦活動報名系統，歡迎踴躍報名參加！" />
+    <meta property="og:title" content="桃園結構工程技師公會-報名系統" />
+    <meta property="og:description" content="桃園市結構工程技師公會活動報名系統，歡迎踴躍報名參加！" />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="shrimp_banner_0.jpg" /> <!-- 更新為釣蝦活動縮圖 -->
+    <meta property="og:image" content="shrimp_preview.jpg" />
     
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -44,7 +44,7 @@
         // ==========================================
         
         // ★★★ 請將下方的引號內容替換成您部署後的「網頁應用程式網址」 ★★★
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyprH4V3M8bLaD6wf6fUlS7LEpxdT2SbJVuqGXkWD_SmnyljA1lTkdUdS_ZetVO7LIx/exec";
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzjqoz3uzHa6fw7E0w_XdOk1pvrERbO_kR5skR2DXP92HcdMyyh2zXQO9FSmN02B56_cA/exec";
         
         // ==========================================
 
@@ -307,7 +307,8 @@
             };
             const handleMemberDateChange = (val) => setFormData(prev => ({ ...prev, memberBirthday: val }));
 
-            const addGuest = () => setFormData(prev => ({ ...prev, guests: [...(prev.guests || []), { name: '', relationship: '配偶/伴侶', birthday: '', bringRod: false }] }));
+            // 攜伴移除自備釣竿欄位，僅保留姓名、稱謂、生日
+            const addGuest = () => setFormData(prev => ({ ...prev, guests: [...(prev.guests || []), { name: '', relationship: '配偶/伴侶', birthday: '' }] }));
             const removeGuest = (index) => setFormData(prev => ({ ...prev, guests: (prev.guests || []).filter((_, i) => i !== index) }));
             const handleGuestChange = (index, field, value) => {
                 setFormData(prev => {
@@ -334,7 +335,7 @@
                     }
                 }
 
-                // --- 額滿與超收防護機制 (總人數不設限，僅限會員上限72) ---
+                // --- 額滿防護機制 (總人數不設限，僅限會員上限72) ---
                 const safeMembers = currentMembers || 0;
                 
                 if (safeMembers + 1 > 72) {
@@ -407,7 +408,7 @@
                             </button>
                         </div>
                         {(!formData.guests || formData.guests.length === 0) && (
-                            <p className="text-sm text-gray-400 italic text-center py-8 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">目前沒有攜伴，若有請點擊上方「新增」</p>
+                            <p className="text-sm text-gray-400 italic text-center py-8 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">目前沒有攜伴，若有請點擊上方「新增攜伴」</p>
                         )}
                         {formData.guests && formData.guests.map((guest, index) => (
                             <div key={index} className="grid grid-cols-1 md:grid-cols-10 gap-4 p-4 md:p-5 border border-gray-200 rounded-xl relative bg-gray-50 hover:bg-white hover:shadow-md transition-all">
@@ -428,15 +429,6 @@
                                     <DateDigitInput required value={guest.birthday} onChange={(val) => handleGuestChange(index, 'birthday', val)} placeholder="如: 1996/05/20" />
                                 </div>
                                 
-                                <div className="md:col-span-10 mt-1">
-                                    <label className={`flex items-center gap-2 cursor-pointer p-2 rounded-lg border transition-all w-fit select-none ${guest.bringRod ? 'bg-indigo-50 border-indigo-300' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
-                                        <input type="checkbox" checked={guest.bringRod || false} onChange={(e) => handleGuestChange(index, 'bringRod', e.target.checked)} className="w-4 h-4 text-indigo-600 rounded cursor-pointer accent-indigo-600" />
-                                        <span className={`text-sm font-medium flex items-center gap-1.5 ${guest.bringRod ? 'text-indigo-700' : 'text-gray-700'}`}>
-                                            自備釣竿
-                                        </span>
-                                    </label>
-                                </div>
-
                                 <div className="md:col-span-10 mt-2 flex justify-end border-t border-gray-200 pt-3">
                                     <button type="button" onClick={() => removeGuest(index)} className="btn-icon text-red-500 hover:text-red-700 p-2 bg-white border border-gray-200 hover:border-red-200 rounded-lg transition gap-2 w-full md:w-auto h-full min-h-[44px]">
                                         <Icons.Trash2 className="w-5 h-5" /> <span className="text-sm font-medium">刪除此位</span>
@@ -488,7 +480,7 @@
             };
             const handleMemberDateChange = (val) => setFormData(prev => ({ ...prev, memberBirthday: val }));
 
-            const addGuest = () => setFormData(prev => ({ ...prev, guests: [...(prev.guests || []), { name: '', relationship: '配偶/伴侶', birthday: '', bringRod: false }] }));
+            const addGuest = () => setFormData(prev => ({ ...prev, guests: [...(prev.guests || []), { name: '', relationship: '配偶/伴侶', birthday: '' }] }));
             const removeGuest = (index) => setFormData(prev => ({ ...prev, guests: (prev.guests || []).filter((_, i) => i !== index) }));
             const handleGuestChange = (index, field, value) => {
                 setFormData(prev => {
@@ -586,15 +578,6 @@
                                                     <label className="block text-xs font-medium text-gray-500 mb-1">生日 (8碼)</label>
                                                     <DateDigitInput value={guest.birthday} onChange={val => handleGuestChange(index, 'birthday', val)} customClass="w-full p-2 text-base border-gray-300 rounded-lg" />
                                                 </div>
-                                                
-                                                <div className="md:col-span-12 mt-1">
-                                                    <label className={`flex items-center gap-2 cursor-pointer p-1.5 rounded-lg border transition-all w-fit select-none ${guest.bringRod ? 'bg-indigo-50 border-indigo-300' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
-                                                        <input type="checkbox" checked={guest.bringRod || false} onChange={(e) => handleGuestChange(index, 'bringRod', e.target.checked)} className="w-4 h-4 text-indigo-600 rounded cursor-pointer accent-indigo-600" />
-                                                        <span className={`text-xs font-medium flex items-center gap-1 ${guest.bringRod ? 'text-indigo-700' : 'text-gray-700'}`}>
-                                                            自備釣竿
-                                                        </span>
-                                                    </label>
-                                                </div>
 
                                                 <div className="md:col-span-12 flex justify-end border-t border-gray-100 pt-2 mt-1">
                                                     <button onClick={() => removeGuest(index)} className="text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg transition flex items-center gap-1 text-sm border border-transparent hover:border-red-100" title="刪除此位">
@@ -642,7 +625,7 @@
                         reg.guests.forEach(guest => {
                             const gAge = getAgeOnEvent(guest.birthday);
                             const gRemark = gAge < 3 ? "未滿3歲" : "";
-                            const gRod = guest.bringRod ? "是" : "否";
+                            const gRod = "-"; // 攜伴無自備釣竿選項
                             
                             csvContent += `"${seq++}","${date}","${guest.name}","${formatDisplayDate(guest.birthday)}","攜伴","${guest.relationship||'親友'}","${reg.memberName}","${gRod}","${gRemark}"\n`;
                         });
@@ -752,7 +735,6 @@
                                                         <div key={i} className="text-sm mb-1 flex items-center gap-1 flex-wrap">
                                                             <span>{g.name}</span>
                                                             <span className="text-xs bg-indigo-50 text-indigo-700 px-1 rounded">[{g.relationship || '親友'}]</span> 
-                                                            {g.bringRod && <span title="自備釣竿" className="text-base">🎣</span>}
                                                             <span className="text-gray-400 text-xs">({formatDisplayDate(g.birthday)})</span>
                                                         </div>
                                                     ))
@@ -862,7 +844,6 @@
                                                 <Icons.MapPin className="w-4 h-4" /> 釣蝦場停車資訊
                                             </button>
                                         </div>
-                                        {/* 更新報名截止日期為 8/20 */}
                                         <p className="text-center text-gray-500 text-sm md:text-base mb-4 font-medium">報名截止日期為 2026/08/20 PM 11:59</p>
                                     </div>
                                 </div>
