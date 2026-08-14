@@ -641,7 +641,7 @@
 
             const exportBirthdayGiftList = () => {
                 let csvContent = "\uFEFF序號,生日月份,姓名,生日,身分,稱謂,對應會員\n";
-                const targetMonths = [3, 4, 5, 6, 7, 8, 9, 10]; // 可根據公會禮物發放邏輯調整
+                const targetMonths = [7, 8, 9]; // 調整為只抓取 7、8、9 月
                 let seq = 1; 
                 
                 registrations.forEach(reg => {
@@ -657,7 +657,7 @@
                     }
                 });
                 
-                if (seq === 1) return showMessage("清單內沒有符合壽星月份的資料");
+                if (seq === 1) return showMessage("清單內沒有 7~9 月壽星的資料");
                 
                 const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement("a");
